@@ -1,0 +1,48 @@
+[project]
+name = "sophon-bench"
+version = "0.0.1"
+description = "Generative benchmark for probing spatial reasoning in VLMs"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Zach Gazak" }]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/zgazak/sophon"
+Repository = "https://github.com/zgazak/sophon"
+Issues = "https://github.com/zgazak/sophon/issues"
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "twine",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+exclude = [
+    "preview/",
+    ".claude/",
+    ".ruff_cache/",
+    ".pytest_cache/",
+    "uv.lock",
+    "tests/",
+    "scripts/",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sophon"]
