@@ -1,0 +1,16 @@
+name: polar_radial_scale
+description: "Polar radial scale detection"
+coordinate_system: polar
+points:
+  num_points: [30, 60]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  radial_scale: [-0.3, 0.3]
+questions:
+  - type: binary
+    alignment_threshold: 0.05
+  - type: comparative
+  - type: quantitative
+num_samples: 200
+seed: 42

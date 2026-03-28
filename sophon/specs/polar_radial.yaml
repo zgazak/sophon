@@ -1,0 +1,16 @@
+name: polar_radial
+description: "Polar radial shift detection"
+coordinate_system: polar
+points:
+  num_points: [30, 60]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  radial_shift: [-0.2, 0.2]
+questions:
+  - type: binary
+    alignment_threshold: 0.05
+  - type: categorical
+  - type: comparative
+num_samples: 200
+seed: 42

@@ -1,0 +1,16 @@
+name: cartesian_translation
+description: "2D Cartesian translation detection (both axes)"
+coordinate_system: cartesian_2d
+points:
+  num_points: [30, 60]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  translation_x: [-0.15, 0.15]
+  translation_y: [-0.15, 0.15]
+questions:
+  - type: binary
+    alignment_threshold: 0.05
+  - type: comparative
+num_samples: 200
+seed: 42

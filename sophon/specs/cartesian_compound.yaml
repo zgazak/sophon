@@ -1,0 +1,18 @@
+name: cartesian_compound
+description: "2D Cartesian compound transforms (translation + rotation + scale)"
+coordinate_system: cartesian_2d
+points:
+  num_points: [30, 60]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  translation_x: [-0.1, 0.1]
+  translation_y: [-0.1, 0.1]
+  rotation_deg: [-30, 30]
+  scale: [-0.2, 0.2]
+questions:
+  - type: binary
+    alignment_threshold: 0.05
+  - type: comparative
+num_samples: 200
+seed: 42

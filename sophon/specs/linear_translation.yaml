@@ -1,0 +1,15 @@
+name: linear_translation
+description: "1D linear translation detection"
+coordinate_system: linear_1d
+points:
+  num_points: [30, 60]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  translation_x: [-0.3, 0.3]
+questions:
+  - type: binary
+    alignment_threshold: 0.05
+  - type: categorical
+num_samples: 200
+seed: 42

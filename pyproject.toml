@@ -1,0 +1,50 @@
+[project]
+name = "sophon-bench"
+version = "0.1.0"
+description = "Generative benchmark for probing spatial reasoning in VLMs across coordinate geometries"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Zach Gazak" }]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "Pillow",
+    "pydantic>=2.0",
+    "PyYAML",
+    "click",
+]
+
+[project.optional-dependencies]
+eval = [
+    "transformers",
+    "torch",
+    "openai",
+    "anthropic",
+    "accelerate",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+
+[project.scripts]
+sophon = "sophon.cli:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sophon"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

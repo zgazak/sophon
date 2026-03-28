@@ -1,0 +1,16 @@
+name: cartesian_rotation
+description: "2D Cartesian rotation detection"
+coordinate_system: cartesian_2d
+points:
+  num_points: [30, 60]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  rotation_deg: [-45, 45]
+questions:
+  - type: binary
+    alignment_threshold: 0.05
+  - type: categorical
+  - type: quantitative
+num_samples: 200
+seed: 42

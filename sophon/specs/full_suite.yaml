@@ -1,0 +1,16 @@
+name: full_suite
+version: "0.1"
+description: "Complete Sophon benchmark suite v0.1"
+specs:
+  - linear_translation.yaml
+  - cartesian_translation_x.yaml
+  - cartesian_translation_y.yaml
+  - cartesian_translation.yaml
+  - cartesian_rotation.yaml
+  - cartesian_scale.yaml
+  - cartesian_compound.yaml
+  - polar_rotation.yaml
+  - polar_radial.yaml
+  - polar_radial_scale.yaml
+  - coord_identification.yaml
+seed: 42
