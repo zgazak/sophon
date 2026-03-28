@@ -6,6 +6,19 @@ readme = "README.md"
 license = "MIT"
 authors = [{ name = "Zach Gazak" }]
 requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
 dependencies = [
     "numpy",
     "matplotlib",
@@ -14,6 +27,11 @@ dependencies = [
     "PyYAML",
     "click",
 ]
+
+[project.urls]
+Homepage = "https://github.com/zgazak/sophon"
+Repository = "https://github.com/zgazak/sophon"
+Issues = "https://github.com/zgazak/sophon/issues"
 
 [project.optional-dependencies]
 eval = [
@@ -27,6 +45,8 @@ dev = [
     "pytest",
     "pytest-cov",
     "ruff",
+    "build",
+    "twine",
 ]
 
 [project.scripts]
