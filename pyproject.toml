@@ -56,6 +56,18 @@ sophon = "sophon.cli:cli"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+exclude = [
+    "preview/",
+    ".claude/",
+    ".ruff_cache/",
+    ".pytest_cache/",
+    "uv.lock",
+    "tests/",
+    "scripts/",
+    "litreview.*",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["sophon"]
 
