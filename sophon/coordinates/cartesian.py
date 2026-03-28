@@ -55,9 +55,7 @@ class Cartesian2D(CoordinateSystem):
         else:
             raise ValueError(f"Unknown distribution: {distribution!r}")
 
-    def apply_transform(
-        self, points: np.ndarray, transform_params: dict[str, float]
-    ) -> np.ndarray:
+    def apply_transform(self, points: np.ndarray, transform_params: dict[str, float]) -> np.ndarray:
         pts = points.copy()
         centroid = pts.mean(axis=0)
 
@@ -73,10 +71,12 @@ class Cartesian2D(CoordinateSystem):
             theta = np.radians(rot_deg)
             cos_t, sin_t = np.cos(theta), np.sin(theta)
             centered = pts - centroid
-            rotated = np.column_stack([
-                centered[:, 0] * cos_t - centered[:, 1] * sin_t,
-                centered[:, 0] * sin_t + centered[:, 1] * cos_t,
-            ])
+            rotated = np.column_stack(
+                [
+                    centered[:, 0] * cos_t - centered[:, 1] * sin_t,
+                    centered[:, 0] * sin_t + centered[:, 1] * cos_t,
+                ]
+            )
             pts = rotated + centroid
 
         # Translate
@@ -87,9 +87,7 @@ class Cartesian2D(CoordinateSystem):
 
         return pts
 
-    def to_image_coords(
-        self, points: np.ndarray, image_size: int, margin: float
-    ) -> np.ndarray:
+    def to_image_coords(self, points: np.ndarray, image_size: int, margin: float) -> np.ndarray:
         margin_px = margin * image_size
         usable = image_size - 2 * margin_px
         pixel = points * usable + margin_px
@@ -164,3 +162,12 @@ class Cartesian2D(CoordinateSystem):
             else:
                 params[key] = 0.0
         return params
+
+    def describe_points(self, points: np.ndarray) -> str:
+        sorted_pts = points[points[:, 0].argsort()]
+        lines = [
+            "Points in a 2D Cartesian coordinate system with x \u2208 [0, 1] and y \u2208 [0, 1]:"
+        ]
+        for i, pt in enumerate(sorted_pts):
+            lines.append(f"  Point {i + 1}: ({pt[0]:.3f}, {pt[1]:.3f})")
+        return "\n".join(lines)

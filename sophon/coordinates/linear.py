@@ -52,15 +52,11 @@ class Linear1D(CoordinateSystem):
         else:
             raise ValueError(f"Unknown distribution: {distribution!r}")
 
-    def apply_transform(
-        self, points: np.ndarray, transform_params: dict[str, float]
-    ) -> np.ndarray:
+    def apply_transform(self, points: np.ndarray, transform_params: dict[str, float]) -> np.ndarray:
         tx = transform_params.get("translation_x", 0.0)
         return points + tx
 
-    def to_image_coords(
-        self, points: np.ndarray, image_size: int, margin: float
-    ) -> np.ndarray:
+    def to_image_coords(self, points: np.ndarray, image_size: int, margin: float) -> np.ndarray:
         margin_px = margin * image_size
         usable = image_size - 2 * margin_px
         x_pixel = points[:, 0] * usable + margin_px
@@ -74,14 +70,21 @@ class Linear1D(CoordinateSystem):
         hi = image_size - margin_px
         center_y = image_size / 2.0
         # Horizontal number line
-        ax.plot([lo, hi], [center_y, center_y], color=color, alpha=alpha * 1.5, linewidth=1.5,
-                zorder=0)
+        ax.plot(
+            [lo, hi], [center_y, center_y], color=color, alpha=alpha * 1.5, linewidth=1.5, zorder=0
+        )
         # Tick marks
         n_ticks = 11
         tick_len = image_size * 0.015
         for x in np.linspace(lo, hi, n_ticks):
-            ax.plot([x, x], [center_y - tick_len, center_y + tick_len],
-                    color=color, alpha=alpha * 1.5, linewidth=1.0, zorder=0)
+            ax.plot(
+                [x, x],
+                [center_y - tick_len, center_y + tick_len],
+                color=color,
+                alpha=alpha * 1.5,
+                linewidth=1.0,
+                zorder=0,
+            )
 
     def describe_transform(self, transform_params: dict[str, float]) -> str:
         tx = transform_params.get("translation_x", 0.0)
@@ -107,3 +110,10 @@ class Linear1D(CoordinateSystem):
             else:
                 params[key] = 0.0
         return params
+
+    def describe_points(self, points: np.ndarray) -> str:
+        sorted_pts = points[points[:, 0].argsort()]
+        lines = ["Points along a 1D number line from 0.0 to 1.0:"]
+        for i, pt in enumerate(sorted_pts):
+            lines.append(f"  Point {i + 1}: position {pt[0]:.3f}")
+        return "\n".join(lines)

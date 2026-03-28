@@ -7,9 +7,7 @@ from sophon.transforms import invert_direction
 
 # --- Question templates ---
 
-BINARY_TEMPLATE = (
-    "Are the blue and red point sets aligned to within approximately one dot width?"
-)
+BINARY_TEMPLATE = "Are the blue and red point sets aligned to within approximately one dot width?"
 
 CATEGORICAL_TEMPLATE = (
     "Which direction should the red points move over the shortest path "
@@ -41,9 +39,7 @@ _QUANTITATIVE_SCALE_KEYS = {
 
 QUANTITATIVE_KEYS = _QUANTITATIVE_ROTATION_KEYS | _QUANTITATIVE_SCALE_KEYS
 
-_ROTATION_TEMPLATE = (
-    "Estimate the rotation angle in degrees between the blue and red point sets."
-)
+_ROTATION_TEMPLATE = "Estimate the rotation angle in degrees between the blue and red point sets."
 
 _QUANTITATIVE_TEMPLATES: dict[str, str] = {
     # Rotation — all use same template (magnitude only, no direction)
@@ -54,8 +50,7 @@ _QUANTITATIVE_TEMPLATES: dict[str, str] = {
     # Scale
     "scale": "By what factor are the red points scaled relative to the blue points?",
     "radial_scale": (
-        "By what factor are the red points radially scaled"
-        " relative to the blue points?"
+        "By what factor are the red points radially scaled relative to the blue points?"
     ),
 }
 

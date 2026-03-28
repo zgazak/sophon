@@ -68,9 +68,7 @@ class Polar(CoordinateSystem):
         else:
             raise ValueError(f"Unknown distribution: {distribution!r}")
 
-    def apply_transform(
-        self, points: np.ndarray, transform_params: dict[str, float]
-    ) -> np.ndarray:
+    def apply_transform(self, points: np.ndarray, transform_params: dict[str, float]) -> np.ndarray:
         pts = points.copy()
         r, theta = pts[:, 0], pts[:, 1]
 
@@ -93,9 +91,7 @@ class Polar(CoordinateSystem):
 
         return np.column_stack([r, theta])
 
-    def to_image_coords(
-        self, points: np.ndarray, image_size: int, margin: float
-    ) -> np.ndarray:
+    def to_image_coords(self, points: np.ndarray, image_size: int, margin: float) -> np.ndarray:
         r, theta = points[:, 0], points[:, 1]
         # Convert to Cartesian in [-1, 1] range
         x_cart = r * np.cos(theta)
@@ -121,8 +117,9 @@ class Polar(CoordinateSystem):
             angle = np.radians(angle_deg)
             x_end = center + usable * np.cos(angle)
             y_end = center - usable * np.sin(angle)
-            ax.plot([center, x_end], [center, y_end],
-                    color=color, alpha=alpha, linewidth=0.5, zorder=0)
+            ax.plot(
+                [center, x_end], [center, y_end], color=color, alpha=alpha, linewidth=0.5, zorder=0
+            )
 
     def describe_transform(self, transform_params: dict[str, float]) -> str:
         parts = []
@@ -147,9 +144,7 @@ class Polar(CoordinateSystem):
             candidates.append((abs(rs), "outward" if rs > 0 else "inward"))
         if abs(rot) > 1e-6:
             # Positive angle = CCW in math, but y-flip makes it CW in image
-            candidates.append(
-                (abs(rot) / 180.0, "clockwise" if rot > 0 else "counterclockwise")
-            )
+            candidates.append((abs(rot) / 180.0, "clockwise" if rot > 0 else "counterclockwise"))
         if abs(rsc) > 1e-6:
             candidates.append((abs(rsc), "outward" if rsc > 0 else "inward"))
 
@@ -177,12 +172,28 @@ class Polar(CoordinateSystem):
                 params[key] = 0.0
         return params
 
+    def describe_points(self, points: np.ndarray) -> str:
+        sorted_pts = points[points[:, 0].argsort()]
+        lines = [
+            "Points in a polar coordinate system "
+            "with r \u2208 [0, 1] and \u03b8 \u2208 [0\u00b0, 360\u00b0):"
+        ]
+        for i, pt in enumerate(sorted_pts):
+            theta_deg = np.degrees(pt[1])
+            lines.append(f"  Point {i + 1}: (r={pt[0]:.3f}, \u03b8={theta_deg:.1f}\u00b0)")
+        return "\n".join(lines)
+
 
 def plt_circle(center: float, radius: float, color: str, alpha: float):
     """Create a matplotlib Circle patch (no fill)."""
     import matplotlib.patches as mpatches
 
     return mpatches.Circle(
-        (center, center), radius, fill=False, edgecolor=color, alpha=alpha,
-        linewidth=0.5, zorder=0,
+        (center, center),
+        radius,
+        fill=False,
+        edgecolor=color,
+        alpha=alpha,
+        linewidth=0.5,
+        zorder=0,
     )

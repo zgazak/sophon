@@ -92,7 +92,5 @@ def parse_coord_identification(response: str) -> ParseResult:
     }
     for alias, canonical in aliases.items():
         if alias in text:
-            return ParseResult(
-                raw_response=response, parsed_answer=canonical, parse_success=True
-            )
+            return ParseResult(raw_response=response, parsed_answer=canonical, parse_success=True)
     return ParseResult(raw_response=response, parsed_answer=None, parse_success=False)

@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+VALID_COORDINATE_SYSTEMS = ["linear_1d", "cartesian_2d", "polar", "spherical", "all"]
+
 
 class RenderingConfig(BaseModel):
     """Visual rendering parameters."""
@@ -37,9 +39,7 @@ class QuestionConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal[
-        "binary", "categorical", "comparative", "quantitative", "coord_identification"
-    ]
+    type: Literal["binary", "categorical", "comparative", "quantitative", "coord_identification"]
     alignment_threshold: float | None = None  # Only used for binary
 
 
@@ -50,13 +50,16 @@ class BenchmarkSpec(BaseModel):
 
     name: str
     description: str = ""
-    coordinate_system: Literal["linear_1d", "cartesian_2d", "polar", "spherical"]
+    coordinate_system: Literal["linear_1d", "cartesian_2d", "polar", "spherical", "all"]
     rendering: RenderingConfig = Field(default_factory=RenderingConfig)
     points: PointsConfig
     transforms: dict[str, list[float]]  # field_name -> [min, max]
     questions: list[QuestionConfig]
     num_samples: int = 1000
     seed: int = 42
+    output_mode: Literal["image", "text_description", "both"] = "image"
+    output_format: Literal["standard", "conversation"] = "standard"
+    system_prompt: str | None = None
 
 
 class SuiteSpec(BaseModel):
@@ -86,3 +89,6 @@ class Sample(BaseModel):
     transform_params: dict[str, float]
     transform_magnitude: float
     transform_direction: str | None = None  # For categorical questions
+    text_description: str | None = None  # Populated when output_mode != "image"
+    num_points: int | None = None
+    show_grid: bool | None = None

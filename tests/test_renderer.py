@@ -64,9 +64,7 @@ class TestRenderComparative:
         params_b = cs.sample_transform(rng, ranges)
         trans_b = cs.apply_transform(ref, params_b)
         config = RenderingConfig()
-        img = render_comparative(
-            cs, ref, trans, trans_b, params, params_b, config, 0.1
-        )
+        img = render_comparative(cs, ref, trans, trans_b, params, params_b, config, 0.1)
         assert isinstance(img, Image.Image)
         # Comparative should be wider than tall
         assert img.size[0] > img.size[1]

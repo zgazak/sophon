@@ -91,9 +91,7 @@ class Spherical(CoordinateSystem):
         else:
             raise ValueError(f"Unknown distribution: {distribution!r}")
 
-    def apply_transform(
-        self, points: np.ndarray, transform_params: dict[str, float]
-    ) -> np.ndarray:
+    def apply_transform(self, points: np.ndarray, transform_params: dict[str, float]) -> np.ndarray:
         pts = points.copy()
         altitude, azimuth = pts[:, 0], pts[:, 1]
 
@@ -154,8 +152,13 @@ class Spherical(CoordinateSystem):
         # Concentric altitude rings
         for frac in np.linspace(0.2, 1.0, 5):
             circle = mpatches.Circle(
-                (center, center), frac * usable_radius,
-                fill=False, edgecolor=color, alpha=alpha, linewidth=0.5, zorder=0,
+                (center, center),
+                frac * usable_radius,
+                fill=False,
+                edgecolor=color,
+                alpha=alpha,
+                linewidth=0.5,
+                zorder=0,
             )
             ax.add_patch(circle)
         # Radial azimuth lines
@@ -163,8 +166,9 @@ class Spherical(CoordinateSystem):
             angle = np.radians(angle_deg)
             x_end = center + usable_radius * np.sin(angle)
             y_end = center - usable_radius * np.cos(angle)
-            ax.plot([center, x_end], [center, y_end],
-                    color=color, alpha=alpha, linewidth=0.5, zorder=0)
+            ax.plot(
+                [center, x_end], [center, y_end], color=color, alpha=alpha, linewidth=0.5, zorder=0
+            )
 
     def describe_transform(self, transform_params: dict[str, float]) -> str:
         parts = []
@@ -196,9 +200,7 @@ class Spherical(CoordinateSystem):
                 (abs(alt) / 90.0, "shift_zenith_in" if alt > 0 else "shift_zenith_out")
             )
         if abs(roll) > 1e-6:
-            candidates.append(
-                (abs(roll) / 180.0, "roll_cw" if roll > 0 else "roll_ccw")
-            )
+            candidates.append((abs(roll) / 180.0, "roll_cw" if roll > 0 else "roll_ccw"))
 
         if not candidates:
             return "rotate_azimuth_cw"  # fallback
@@ -223,3 +225,16 @@ class Spherical(CoordinateSystem):
             else:
                 params[key] = 0.0
         return params
+
+    def describe_points(self, points: np.ndarray) -> str:
+        sorted_pts = points[points[:, 0].argsort()]
+        lines = [
+            "Points on a hemisphere in spherical coordinates (fisheye projection):",
+            "  altitude \u2208 [0\u00b0, 90\u00b0] (0\u00b0=horizon, 90\u00b0=zenith)",
+            "  azimuth \u2208 [0\u00b0, 360\u00b0) (0\u00b0=north, clockwise)",
+        ]
+        for i, pt in enumerate(sorted_pts):
+            alt_deg = np.degrees(pt[0])
+            az_deg = np.degrees(pt[1])
+            lines.append(f"  Point {i + 1}: (alt={alt_deg:.1f}\u00b0, az={az_deg:.1f}\u00b0)")
+        return "\n".join(lines)

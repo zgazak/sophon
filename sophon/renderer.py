@@ -84,9 +84,7 @@ def render_comparative(
     """Render side-by-side A|B comparison image (double width)."""
     size = rendering_config.image_size
     dpi = 100
-    fig, (ax_a, ax_b) = plt.subplots(
-        1, 2, figsize=(size * 2 / dpi, size / dpi), dpi=dpi
-    )
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(size * 2 / dpi, size / dpi), dpi=dpi)
 
     for ax, label, transformed, t_params in [
         (ax_a, "A", transformed_a, transform_params_a),
@@ -104,9 +102,7 @@ def render_comparative(
         if hasattr(coord_system.to_image_coords, "__code__") and "roll_deg" in (
             coord_system.to_image_coords.__code__.co_varnames
         ):
-            trans_img = coord_system.to_image_coords(
-                transformed, size, margin, roll_deg=roll_deg
-            )
+            trans_img = coord_system.to_image_coords(transformed, size, margin, roll_deg=roll_deg)
         else:
             trans_img = coord_system.to_image_coords(transformed, size, margin)
 
@@ -117,8 +113,13 @@ def render_comparative(
 
         # Panel label
         ax.text(
-            size * 0.05, size * 0.08, label,
-            fontsize=16, fontweight="bold", color="#333333", zorder=10,
+            size * 0.05,
+            size * 0.08,
+            label,
+            fontsize=16,
+            fontweight="bold",
+            color="#333333",
+            zorder=10,
         )
 
     plt.subplots_adjust(wspace=0.02, left=0, right=1, top=1, bottom=0)
@@ -174,9 +175,7 @@ def render_preview(
 
     draw = ImageDraw.Draw(canvas)
     try:
-        font = ImageFont.truetype(
-            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 13
-        )
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 13)
     except (OSError, IOError):
         font = ImageFont.load_default()
 

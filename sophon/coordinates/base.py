@@ -43,16 +43,12 @@ class CoordinateSystem(ABC):
         ...
 
     @abstractmethod
-    def apply_transform(
-        self, points: np.ndarray, transform_params: dict[str, float]
-    ) -> np.ndarray:
+    def apply_transform(self, points: np.ndarray, transform_params: dict[str, float]) -> np.ndarray:
         """Apply transformation in native space. Returns transformed points."""
         ...
 
     @abstractmethod
-    def to_image_coords(
-        self, points: np.ndarray, image_size: int, margin: float
-    ) -> np.ndarray:
+    def to_image_coords(self, points: np.ndarray, image_size: int, margin: float) -> np.ndarray:
         """Project native coordinates to pixel coordinates. Returns ndarray(n, 2)."""
         ...
 
@@ -88,4 +84,13 @@ class CoordinateSystem(ABC):
         self, rng: np.random.Generator, transform_ranges: dict[str, list[float]]
     ) -> dict[str, float]:
         """Sample random transform parameters from spec ranges."""
+        ...
+
+    @abstractmethod
+    def describe_points(self, points: np.ndarray) -> str:
+        """Return a human-readable text description of point positions in native coordinate space.
+
+        Points are sorted by their first coordinate for consistency.
+        Coordinates are rounded to 3 decimal places.
+        """
         ...
