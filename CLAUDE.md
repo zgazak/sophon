@@ -15,7 +15,7 @@ Existing spatial reasoning benchmarks (What's Up, CLEVR, SpartUN) test discrete 
 - **CLI command:** `sophon`
 - **License:** MIT
 - **Author:** Zach Gazak
-- **Python:** >= 3.10
+- **Python:** >= 3.11
 - **Package manager:** uv
 - **Dependencies (core):** numpy, matplotlib, Pillow, pydantic (v2), PyYAML, click
 - **Dependencies (eval):** transformers, torch, openai, anthropic, accelerate — optional `[eval]` extra

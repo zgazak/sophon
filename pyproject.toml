@@ -5,13 +5,12 @@ description = "Generative benchmark for probing spatial reasoning in VLMs across
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Zach Gazak" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -20,9 +19,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "numpy",
-    "matplotlib",
-    "Pillow",
+    "numpy~=2.4",
+    "matplotlib~=3.10",
+    "Pillow~=12.1",
     "pydantic>=2.0",
     "PyYAML",
     "click",
@@ -73,7 +72,7 @@ packages = ["sophon"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
