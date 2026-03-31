@@ -110,7 +110,17 @@ def _api_key_error_message(api_base: str | None) -> str:
 
 
 def _image_to_base64(img: Image.Image) -> str:
-    """Encode a PIL Image as a base64 data URL."""
+    """Encode a PIL Image as a base64 data URL.
+
+    Converts RGBA to RGB (white background) to avoid alpha channel
+    issues with some vision API providers.
+    """
+    if img.mode == "RGBA":
+        background = Image.new("RGB", img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[3])
+        img = background
+    elif img.mode != "RGB":
+        img = img.convert("RGB")
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
@@ -195,7 +205,10 @@ def create_openai_vlm_fn(
             user_content.append(
                 {
                     "type": "image_url",
-                    "image_url": {"url": _image_to_base64(image)},
+                    "image_url": {
+                        "url": _image_to_base64(image),
+                        "detail": "high",
+                    },
                 }
             )
         if text_description:
@@ -241,11 +254,14 @@ def create_openai_vlm_fn(
             usage["prompt_tokens"] = response.usage.prompt_tokens
             usage["completion_tokens"] = response.usage.completion_tokens
             usage["total_tokens"] = response.usage.total_tokens
-        # OpenRouter returns cost in response
-        if hasattr(response, "usage") and response.usage:
-            raw = response.model_dump() if hasattr(response, "model_dump") else {}
-            if "usage" in raw and "total_cost" in (raw.get("usage") or {}):
-                usage["total_cost"] = raw["usage"]["total_cost"]
+        # OpenRouter returns cost in usage — field is "cost" (not "total_cost")
+        if response.usage:
+            raw_usage = response.usage.model_dump() if hasattr(response.usage, "model_dump") else {}
+            # Try "cost" first (OpenRouter's actual field name), then "total_cost"
+            for key in ("cost", "total_cost"):
+                if key in raw_usage:
+                    usage["total_cost"] = float(raw_usage[key])
+                    break
 
         return text, usage
 
@@ -334,8 +350,9 @@ def evaluate_samples(
 
         raw_response, usage = vlm_fn(image, q_text, text_desc)
 
-        vocab = None
-        if direction_vocabularies and cs_name in direction_vocabularies:
+        # Prefer sample-level restricted vocab when available
+        vocab = sample.get("valid_directions")
+        if vocab is None and direction_vocabularies and cs_name in direction_vocabularies:
             vocab = direction_vocabularies[cs_name]
 
         parsed = _parse_response(q_type, raw_response, vocab)

@@ -220,6 +220,7 @@ class BenchmarkGenerator:
         When output_mode is "image" or "both", image is a PIL Image.
         """
         seed = seed if seed is not None else self.spec.seed
+        self._active_seed = seed
         rng = np.random.Generator(np.random.PCG64(seed))
 
         if self._is_all:
@@ -227,16 +228,21 @@ class BenchmarkGenerator:
         else:
             yield from self._generate_single_coord(rng)
 
+    def _make_sample_id(self, index: int) -> str:
+        """Build a globally unique sample ID: {spec_name}_seed{seed}_{zero_padded_index}."""
+        return f"{self.spec.name}_seed{self._active_seed}_{index:04d}"
+
     def _generate_single_coord(
         self, rng: np.random.Generator
     ) -> Iterator[tuple[Image.Image | None, Sample]]:
-        sample_id = 0
+        sample_idx = 0
         for _sample_idx in range(self.spec.num_samples):
             for question_config in self.spec.questions:
-                result = self._generate_one(rng, sample_id, question_config)
+                sid = self._make_sample_id(sample_idx)
+                result = self._generate_one(rng, sid, question_config)
                 if result is not None:
                     yield result
-                    sample_id += 1
+                    sample_idx += 1
 
     def _generate_all_coords(
         self, rng: np.random.Generator
@@ -245,7 +251,7 @@ class BenchmarkGenerator:
         per_cs = self.spec.num_samples // len(_ALL_COORD_SYSTEMS)
         remainder = self.spec.num_samples % len(_ALL_COORD_SYSTEMS)
 
-        sample_id = 0
+        sample_idx = 0
         for cs_idx, cs_name in enumerate(_ALL_COORD_SYSTEMS):
             cs = get_coordinate_system(cs_name)
             n_samples = per_cs + (1 if cs_idx < remainder else 0)
@@ -253,21 +259,22 @@ class BenchmarkGenerator:
 
             for _sample_idx in range(n_samples):
                 for question_config in self.spec.questions:
+                    sid = self._make_sample_id(sample_idx)
                     result = self._generate_one(
                         rng,
-                        sample_id,
+                        sid,
                         question_config,
                         cs_override=cs,
                         transforms_override=transforms,
                     )
                     if result is not None:
                         yield result
-                        sample_id += 1
+                        sample_idx += 1
 
     def _generate_one(
         self,
         rng: np.random.Generator,
-        sample_id: int,
+        sample_id: int | str,
         question_config: QuestionConfig,
         cs_override: CoordinateSystem | None = None,
         transforms_override: dict[str, list[float]] | None = None,
@@ -277,8 +284,14 @@ class BenchmarkGenerator:
         transforms = transforms_override if transforms_override is not None else spec.transforms
 
         # 1. For coord_identification, cycle through coordinate systems
+        #    Use the numeric index from the ID for cycling (works for both
+        #    legacy int IDs and new string IDs like "spec_seed42_0003").
         if q_type == "coord_identification":
-            cs_name = _COORD_ID_SYSTEMS[sample_id % len(_COORD_ID_SYSTEMS)]
+            if isinstance(sample_id, str):
+                idx = int(sample_id.rsplit("_", 1)[-1])
+            else:
+                idx = sample_id
+            cs_name = _COORD_ID_SYSTEMS[idx % len(_COORD_ID_SYSTEMS)]
             cs = get_coordinate_system(cs_name)
         elif cs_override is not None:
             cs = cs_override
@@ -352,12 +365,20 @@ class BenchmarkGenerator:
             text_desc = _build_text_description(cs, ref_points, transformed)
 
         # Generate question and answer
+        valid_dirs: list[str] | None = None
         if q_type == "binary":
             q_text, answer = generate_binary_question(is_aligned)
         elif q_type == "categorical":
-            q_text, answer = generate_categorical_question(cs, transform_params)
+            vocab_mode = question_config.vocab_mode
+            q_text, answer, valid_dirs = generate_categorical_question(
+                cs, transform_params, vocab_mode=vocab_mode,
+            )
         elif q_type == "quantitative":
-            result = generate_quantitative_question(cs, transform_params)
+            result = generate_quantitative_question(
+                cs, transform_params,
+                range_hint=question_config.range_hint,
+                transform_ranges=transforms,
+            )
             if result is None:
                 return None
             q_text, answer = result
@@ -377,6 +398,7 @@ class BenchmarkGenerator:
             transform_params=transform_params,
             transform_magnitude=magnitude,
             transform_direction=direction,
+            valid_directions=valid_dirs,
             text_description=text_desc,
             num_points=n_points,
             show_grid=spec.rendering.show_grid,
@@ -388,7 +410,7 @@ class BenchmarkGenerator:
         cs: CoordinateSystem,
         ref_points: np.ndarray,
         n_points: int,
-        sample_id: int,
+        sample_id: int | str,
         spec: BenchmarkSpec,
     ) -> tuple[Image.Image | None, Sample]:
         """Generate a coordinate-identification sample."""

@@ -41,6 +41,8 @@ class QuestionConfig(BaseModel):
 
     type: Literal["binary", "categorical", "comparative", "quantitative", "coord_identification"]
     alignment_threshold: float | None = None  # Only used for binary
+    vocab_mode: Literal["restricted", "full"] = "restricted"  # Only used for categorical
+    range_hint: bool = False  # Only used for quantitative
 
 
 class BenchmarkSpec(BaseModel):
@@ -79,7 +81,7 @@ class Sample(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    sample_id: int
+    sample_id: int | str
     spec_name: str
     coordinate_system: str
     question_type: str
@@ -89,6 +91,7 @@ class Sample(BaseModel):
     transform_params: dict[str, float]
     transform_magnitude: float
     transform_direction: str | None = None  # For categorical questions
+    valid_directions: list[str] | None = None  # For categorical: the vocabulary used in the question
     text_description: str | None = None  # Populated when output_mode != "image"
     num_points: int | None = None
     show_grid: bool | None = None
