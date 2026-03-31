@@ -1,6 +1,6 @@
 [project]
 name = "sophon-bench"
-version = "0.1.0"
+version = "0.3.0"
 description = "Generative benchmark for probing spatial reasoning in VLMs across coordinate geometries"
 readme = "README.md"
 license = "MIT"
@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "numpy~=2.4",
+    "numpy>=1.26",
     "matplotlib~=3.10",
     "Pillow~=12.1",
     "pydantic>=2.0",

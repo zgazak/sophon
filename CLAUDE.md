@@ -279,14 +279,66 @@ The evaluator takes a callable `vlm_fn(image: PIL.Image, question: str) → str`
 
 VLMs return free-form text, not structured answers. The `parsing.py` module is responsible for extracting the actual answer from whatever the model says. This is critical — a fragile parser will silently corrupt results. It should be its own module, not buried inside the evaluator.
 
-Parsing rules per question type:
-- **Binary:** Extract yes/no. Handle "Yes", "yes", "Yes, the points appear aligned", "Based on my analysis, I believe they are aligned" → all map to "yes". Case-insensitive search for yes/no keywords. If neither found, mark as unparseable (not wrong — unparseable).
-- **Categorical:** Extract a direction word from the response. The model might say "The red points should move to the left" — extract "left". Match against the coordinate system's `direction_vocabulary`. If multiple direction words appear, take the first. If none found, mark unparseable.
-- **Comparative:** Extract A or B. Handle "A", "Image A", "The first image (A)", "A shows better alignment" → all map to "A".
-- **Quantitative:** Extract a numeric value. Handle "approximately 15 degrees", "~15°", "15.3", "I estimate about 15 degrees" → all map to 15.0. Use regex for number extraction, strip units.
-- **Coord identification:** Match against known coordinate system names and common aliases.
+#### Format Suffixes
 
-Unparseable responses should be tracked separately in the results — they indicate prompt/format issues, not spatial reasoning failures. Report parse rate alongside accuracy.
+Every question type appends a short format instruction to the question
+text. This is standard practice in VLM benchmarks (MMMU, MathVista,
+BLINK). The suffix is directive but not so tight that every response
+becomes trivially parseable — models that can't engage with the task
+should still produce unparseable responses.
+
+| Type | Suffix |
+|------|--------|
+| Binary | "Answer yes or no." |
+| Categorical | "Answer with one of: {direction vocabulary}." |
+| Comparative | "Answer A or B." |
+| Quantitative (rotation) | "State your estimate in degrees as a number." |
+| Quantitative (scale) | "State your estimate as a numeric factor." |
+| Coord identification | Already has "Choose from: ..." (no change) |
+
+The suffix is part of the question text in the user message, not a
+system prompt. The categorical suffix dynamically includes the
+coordinate system's direction vocabulary.
+
+#### Last-Keyword-Wins Rule
+
+**All parsers prefer the LAST relevant keyword, not the first.** Models
+often restate the problem before answering:
+- "The question asks if they are aligned. No, they are not aligned."
+  First keyword = "aligned" (yes), last keyword = "not" (no, correct).
+- "The red points are shifted right. To align, move left."
+  First direction = "right", last direction = "left" (correct).
+
+This applies to binary, categorical, comparative, and coord
+identification parsers.
+
+#### Quantitative Parser Priority Order
+
+The quantitative parser uses a 3-tier extraction strategy to avoid
+picking up list markers ("1. Normalize", "2. Calculate") from tutorial
+responses:
+
+1. **Unit-adjacent numbers** — "30 degrees", "factor of 2.3", "30°"
+2. **Last non-list-marker number** — filters out numbers followed by
+   `. [A-Z]`, `. **`, `)`, or preceded by "Step"/"Item"
+3. **Reject** — if only list markers found, `parse_success=False`
+
+#### parse_success Semantics
+
+`parse_success=False` means "no genuine answer attempt detected", NOT
+"model got it wrong." A model that writes a tutorial about how one
+*could* estimate rotation (without actually doing it) gets
+`parse_success=False`. A model that says "25 degrees" when the answer
+is 30 gets `parse_success=True, correct=False`.
+
+Parsing rules per question type:
+- **Binary:** Search for all occurrences of yes/no keywords. Take the last one (last-keyword-wins). If neither found, mark unparseable.
+- **Categorical:** Search for all direction vocabulary words. Take the last one found. If none found, mark unparseable.
+- **Comparative:** Search for all A/B occurrences. Take the last one. If neither found, mark unparseable.
+- **Quantitative:** Priority extraction as described above. Rejects list markers and tutorial-only responses.
+- **Coord identification:** Search for coordinate system aliases. Take the last match found.
+
+Unparseable responses should be tracked separately in the results — they indicate prompt/format issues or model inability to engage, not spatial reasoning failures. Report parse rate alongside accuracy.
 
 ### Scoring
 

@@ -94,11 +94,17 @@ seed: 42
         ratio = yes_count / max(no_count, 1)
         assert 0.6 < ratio < 1.7, f"Binary balance off: {yes_count} yes, {no_count} no"
 
-    def test_sample_ids_sequential(self):
+    def test_sample_ids_sequential_and_unique(self):
         spec = _make_spec()
         gen = BenchmarkGenerator(spec)
         ids = [s.sample_id for _, s in gen.generate()]
-        assert ids == list(range(len(ids)))
+        # IDs should be globally unique strings with sequential indices
+        assert len(ids) == len(set(ids)), "sample IDs must be unique"
+        # Check format: {spec_name}_seed{seed}_{zero_padded_index}
+        for i, sid in enumerate(ids):
+            assert isinstance(sid, str), f"sample_id should be str, got {type(sid)}"
+            assert sid.endswith(f"_{i:04d}"), f"Expected index {i:04d} in {sid}"
+            assert spec.name in sid, f"Expected spec name in {sid}"
 
 
 class TestComparative:
