@@ -42,6 +42,7 @@ class QuestionConfig(BaseModel):
     type: Literal["binary", "categorical", "comparative", "quantitative", "coord_identification"]
     alignment_threshold: float | None = None  # Only used for binary
     vocab_mode: Literal["restricted", "full"] = "restricted"  # Only used for categorical
+    vocab_order: Literal["fixed", "random", "random_correct_last"] = "fixed"  # Only used for categorical
     range_hint: bool = False  # Only used for quantitative
 
 

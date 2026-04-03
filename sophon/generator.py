@@ -370,8 +370,12 @@ class BenchmarkGenerator:
             q_text, answer = generate_binary_question(is_aligned)
         elif q_type == "categorical":
             vocab_mode = question_config.vocab_mode
+            vocab_order = question_config.vocab_order
+            # Deterministic per-sample seed for vocab ordering
+            order_seed = hash(str(sample_id)) & 0x7FFFFFFF
             q_text, answer, valid_dirs = generate_categorical_question(
                 cs, transform_params, vocab_mode=vocab_mode,
+                vocab_order=vocab_order, order_seed=order_seed,
             )
         elif q_type == "quantitative":
             result = generate_quantitative_question(

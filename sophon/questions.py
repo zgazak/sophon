@@ -155,6 +155,8 @@ def generate_categorical_question(
     coord_system: CoordinateSystem,
     transform_params: dict[str, float],
     vocab_mode: str = "restricted",
+    vocab_order: str = "fixed",
+    order_seed: int = 0,
 ) -> tuple[str, str, list[str]]:
     """Return (question_text, ground_truth, valid_directions).
 
@@ -165,7 +167,14 @@ def generate_categorical_question(
         "restricted" (default) — use only the direction pair relevant to the
         active transform type.  Prevents distractor confusion.
         "full" — use the coordinate system's full direction_vocabulary.
+
+    vocab_order:
+        "fixed" (default) — options in canonical order.
+        "random" — deterministic random shuffle using *order_seed*.
+        "random_correct_last" — correct answer placed last, rest shuffled.
     """
+    import random as _random
+
     applied_direction = coord_system.classify_direction(transform_params)
     answer = invert_direction(applied_direction)
 
@@ -176,7 +185,6 @@ def generate_categorical_question(
         if transform_type is not None:
             vocab = get_restricted_vocab(coord_system.name, transform_type)
         if vocab is None:
-            # Fallback to full vocab (compound transforms or unknown mapping)
             vocab = list(coord_system.direction_vocabulary)
     else:
         vocab = list(coord_system.direction_vocabulary)
@@ -185,6 +193,17 @@ def generate_categorical_question(
         f"GT '{answer}' not in vocab {vocab} "
         f"for ({coord_system.name}, {detect_active_transform(transform_params)})"
     )
+
+    # Apply vocab ordering
+    if vocab_order == "random":
+        rng = _random.Random(order_seed)
+        vocab = list(vocab)
+        rng.shuffle(vocab)
+    elif vocab_order == "random_correct_last":
+        rng = _random.Random(order_seed)
+        others = [v for v in vocab if v != answer]
+        rng.shuffle(others)
+        vocab = others + [answer]
 
     # Pick template: "shortest arc" only for rotation/angular transforms
     transform_type = detect_active_transform(transform_params)
