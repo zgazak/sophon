@@ -121,12 +121,22 @@ class TestParseComparative:
     def test_image_b(self):
         assert parse_comparative("Image B shows better alignment").parsed_answer == "B"
 
-    def test_last_keyword_wins(self):
+    def test_first_keyword_wins(self):
+        # First-keyword-wins: model states its answer first, then discusses both
         r = parse_comparative("Image A is close but Image B is better aligned.")
+        assert r.parsed_answer == "A"
+
+    def test_first_keyword_wins_reversed(self):
+        r = parse_comparative("B has some alignment but A is clearly better.")
         assert r.parsed_answer == "B"
 
-    def test_last_keyword_wins_reversed(self):
-        r = parse_comparative("B has some alignment but A is clearly better.")
+    def test_bold_answer_overrides_position(self):
+        # Bolded answer takes priority regardless of position
+        r = parse_comparative("Image A is close but **B** is better aligned.")
+        assert r.parsed_answer == "B"
+
+    def test_bold_answer_at_start(self):
+        r = parse_comparative("**A**\n\nIn image A, the points are closer. Image B shows more scatter.")
         assert r.parsed_answer == "A"
 
     def test_unparseable(self):
@@ -287,6 +297,60 @@ class TestParseQuantitative:
     def test_abs_with_unit_pattern(self):
         r = parse_quantitative("The angle is -22.5 degrees", take_abs=True)
         assert r.parsed_answer == pytest.approx(22.5)
+
+    # --- Coordinate-pair filtering (avoids VLM pixel-coord bleed) ---
+
+    def test_ignores_coordinate_pair_parens(self):
+        """Pixel coordinates in parens should not be picked as answers."""
+        r = parse_quantitative(
+            "The center appears to be around coordinates (380, 255) "
+            "on the image. The rotation looks like ~15 degrees."
+        )
+        assert r.parsed_answer == pytest.approx(15.0)
+
+    def test_ignores_coordinate_pair_no_unit_fallback(self):
+        """When only coord-pair numbers and a final answer are present,
+        fallback picks the final answer, not the coord component."""
+        r = parse_quantitative(
+            "Looking at the plot, the center is near (320, 180) and the "
+            "corresponding point is at (400, 220). Final estimate: 0.95"
+        )
+        assert r.parsed_answer == pytest.approx(0.95)
+
+    def test_ignores_coordinate_pair_brackets(self):
+        r = parse_quantitative(
+            "Point [120, 340] indicates the top-left. Rotation approximately 30"
+        )
+        assert r.parsed_answer == pytest.approx(30.0)
+
+    def test_coord_pair_only_response_returns_none(self):
+        """If the response is *only* coord pairs and no real answer,
+        extraction should fail cleanly rather than pick a coord component."""
+        r = parse_quantitative("The points are at (120, 340) and (250, 180)")
+        assert r.parse_success is False
+        assert r.parsed_answer is None
+
+    # --- Range-hyphen filtering ---
+
+    def test_range_hyphen_not_negative(self):
+        """'100-120 pixels' should not give -120."""
+        r = parse_quantitative(
+            "Radius appears to be 100-120 pixels from center. The scale "
+            "factor is approximately 1.2"
+        )
+        assert r.parsed_answer == pytest.approx(1.2)
+
+    def test_range_hyphen_spaced(self):
+        """'0.5 - 1.5 range' should not give -1.5."""
+        r = parse_quantitative(
+            "The factor is in the 0.5 - 1.5 range. Final estimate: 0.95"
+        )
+        assert r.parsed_answer == pytest.approx(0.95)
+
+    def test_standalone_negative_still_parsed(self):
+        """Verify a real standalone '-15' is still picked up."""
+        r = parse_quantitative("The rotation is -15 relative to north.")
+        assert r.parsed_answer == pytest.approx(-15.0)
 
 
 # =========================================================================
