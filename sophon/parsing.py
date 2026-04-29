@@ -80,19 +80,43 @@ def parse_categorical(response: str, vocabulary: list[str]) -> ParseResult:
 # Comparative
 # ---------------------------------------------------------------------------
 
+_ANSWER_MARKER_RE = re.compile(
+    r"\b(?:final\s+)?answer(?:\s+is)?\s*[:=\-]?[\s*]*([AB])\b",
+    re.IGNORECASE,
+)
+
+
 def parse_comparative(response: str) -> ParseResult:
     """Extract A or B from the response.
 
     Strategy (in priority order):
 
-    1. **Bolded answer**: ``**A**`` or ``**B**`` — models often bold their answer.
-       Uses first match (the direct answer, not a mention in explanation).
+    0. **Explicit answer marker (last-wins)**: ``Final Answer: B``,
+       ``**Answer: B**``, ``answer is A``. When the model uses an explicit
+       conclusion marker, the *last* such marker wins (handles
+       ``initially I thought A, but on reflection: B``). This is needed for
+       structured-response models (e.g. Qwen2.5-VL-32B) that write
+       ``**Image A:** ... **Image B:** ... **Final Answer: B**`` — without
+       this rule, the first-keyword-wins fallback grabs the "A" from the
+       ``**Image A**`` header.
+    1. **Bolded answer**: ``**A**`` or ``**B**`` — models often bold their
+       answer. Uses first match (the direct answer, not a mention in
+       explanation).
     2. **First-keyword-wins**: the first standalone A/B in the response.
-       Verbose models (e.g. Opus) state their answer first, then discuss both
-       options.  Last-keyword-wins would pick up the *other* label from the
-       contrastive explanation.
+       Verbose models (e.g. Opus) state their answer first, then discuss
+       both options.  Last-keyword-wins would pick up the *other* label
+       from the contrastive explanation.
     """
     text = response.strip()
+
+    # Priority 0: explicit "answer" marker (last-wins)
+    markers = list(_ANSWER_MARKER_RE.finditer(text))
+    if markers:
+        return ParseResult(
+            raw_response=response,
+            parsed_answer=markers[-1].group(1).upper(),
+            parse_success=True,
+        )
 
     # Priority 1: bolded answer  **A** or **B**
     bold = re.search(r"\*\*([AaBb])\*\*", text)

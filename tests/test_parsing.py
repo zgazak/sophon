@@ -143,6 +143,47 @@ class TestParseComparative:
         r = parse_comparative("The first image")
         assert r.parse_success is False
 
+    # --- Priority 0: explicit "answer" markers (last-wins) ---
+
+    def test_final_answer_marker_b(self):
+        # Qwen2.5-VL-32B style: structured "Image A / Image B / Final Answer: B"
+        r = parse_comparative(
+            "**Image A**: scattered points.\n"
+            "**Image B**: aligned points.\n"
+            "**Final Answer: B**"
+        )
+        assert r.parsed_answer == "B"
+
+    def test_final_answer_marker_a(self):
+        r = parse_comparative(
+            "**Image A**: aligned points.\n"
+            "**Image B**: scattered points.\n"
+            "**Final Answer: A**"
+        )
+        assert r.parsed_answer == "A"
+
+    def test_answer_marker_overrides_first_keyword(self):
+        # "Image A" appears first in the body, but "Answer: B" wins
+        r = parse_comparative("Image A is shown. Image B is shown. Answer: B")
+        assert r.parsed_answer == "B"
+
+    def test_answer_marker_last_wins(self):
+        # Model second-guesses itself: last marker wins
+        r = parse_comparative("Initially I thought Answer: A, but Final Answer: B")
+        assert r.parsed_answer == "B"
+
+    def test_answer_marker_unbolded(self):
+        r = parse_comparative("Final Answer: B")
+        assert r.parsed_answer == "B"
+
+    def test_answer_is_marker(self):
+        r = parse_comparative("After comparing both images, the answer is A.")
+        assert r.parsed_answer == "A"
+
+    def test_answer_marker_with_split_bolds(self):
+        r = parse_comparative("**Final Answer:** **B**")
+        assert r.parsed_answer == "B"
+
 
 # =========================================================================
 # Quantitative
