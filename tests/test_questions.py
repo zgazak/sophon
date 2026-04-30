@@ -59,6 +59,20 @@ def test_categorical_full_vocab():
     assert "clockwise" in text
 
 
+def test_categorical_y_matches_visual_direction():
+    cs = get_coordinate_system("cartesian_2d")
+    # Renderer: pixel_y = image_size - native_y, drawn on matplotlib y-up axis.
+    # Net: positive ty (higher native y) appears visually DOWN, so the
+    # correction (red -> blue) should be UP.
+    pos = {"translation_x": 0.0, "translation_y": 0.2, "rotation_deg": 0.0, "scale": 0.0}
+    _, answer_pos, _ = generate_categorical_question(cs, pos)
+    assert answer_pos == "up"
+
+    neg = {"translation_x": 0.0, "translation_y": -0.2, "rotation_deg": 0.0, "scale": 0.0}
+    _, answer_neg, _ = generate_categorical_question(cs, neg)
+    assert answer_neg == "down"
+
+
 def test_categorical_valid_direction():
     for name in ["linear_1d", "cartesian_2d", "polar", "spherical"]:
         cs = get_coordinate_system(name)

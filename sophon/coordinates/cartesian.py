@@ -129,7 +129,9 @@ class Cartesian2D(CoordinateSystem):
         if abs(tx) > 1e-6:
             candidates.append((abs(tx), "right" if tx > 0 else "left"))
         if abs(ty) > 1e-6:
-            candidates.append((abs(ty), "up" if ty > 0 else "down"))
+            # Rendering flips y (pixel y = image_size - native y) and matplotlib
+            # uses y-up axes, so positive ty (higher native y) renders visually DOWN
+            candidates.append((abs(ty), "down" if ty > 0 else "up"))
         if abs(rot) > 1e-6:
             # Positive angle = CCW in math, but y-flip makes it CW in image
             candidates.append((abs(rot) / 180.0, "clockwise" if rot > 0 else "counterclockwise"))
