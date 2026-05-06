@@ -367,7 +367,7 @@ class BenchmarkGenerator:
         # Generate question and answer
         valid_dirs: list[str] | None = None
         if q_type == "binary":
-            q_text, answer = generate_binary_question(is_aligned)
+            q_text, answer = generate_binary_question(is_aligned, coord_system_name=cs.name)
         elif q_type == "categorical":
             vocab_mode = question_config.vocab_mode
             vocab_order = question_config.vocab_order

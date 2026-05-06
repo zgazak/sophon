@@ -62,6 +62,22 @@ BINARY_TEMPLATE = (
     "Answer yes or no."
 )
 
+# Linear-1D stimuli render the two point sets on parallel horizontal lines
+# offset vertically for visibility, which makes "aligned" ambiguous: VLMs
+# variously read it as (a) the vertical gap between rows (always ~1 dot),
+# (b) "do these arrangements lie on horizontal axes" (yes by construction),
+# or (c) the horizontal-position offset (the intended reading). We sidestep
+# the ambiguity by asking about *offset* directly — there is no axis-level
+# reading to fall into.
+_BINARY_TEMPLATE_LINEAR_1D = (
+    "Is the horizontal offset (left/right shift) between the blue and red "
+    "point sets less than approximately one dot width? Answer yes or no."
+)
+
+_BINARY_TEMPLATES_BY_COORD: dict[str, str] = {
+    "linear_1d": _BINARY_TEMPLATE_LINEAR_1D,
+}
+
 _CATEGORICAL_TEMPLATE_DEFAULT = (
     "Which direction should the red points move "
     "to align with the blue points? Answer with one of: {directions}."
@@ -139,6 +155,7 @@ def has_quantitative_transform(transform_params: dict[str, float]) -> bool:
 
 def generate_binary_question(
     is_aligned: bool,
+    coord_system_name: str | None = None,
 ) -> tuple[str, str]:
     """Return (question_text, ground_truth: 'yes' | 'no').
 
@@ -146,9 +163,14 @@ def generate_binary_question(
     not by magnitude thresholding. Aligned samples get per-point jitter
     (visually close pairs), misaligned samples get real transforms
     (clearly separated clouds). No borderline cases.
+
+    If a coord_system_name is provided and a coord-specific template is
+    registered (currently only "linear_1d"), that template is used
+    instead of the default to disambiguate stimulus axes.
     """
     answer = "yes" if is_aligned else "no"
-    return BINARY_TEMPLATE, answer
+    template = _BINARY_TEMPLATES_BY_COORD.get(coord_system_name or "", BINARY_TEMPLATE)
+    return template, answer
 
 
 def generate_categorical_question(

@@ -23,6 +23,18 @@ def test_binary_misaligned():
     assert answer == "no"
 
 
+def test_binary_linear_1d_offset_phrasing():
+    """Linear-1D binary template asks about horizontal *offset* rather than
+    *alignment*, to sidestep the axis-reading ambiguity (parallel rows always
+    'lie along horizontal axes' so 'aligned' degenerates)."""
+    text, _ = generate_binary_question(is_aligned=True, coord_system_name="linear_1d")
+    assert "offset" in text.lower()
+    assert "horizontal" in text.lower()
+    # Other coord systems still use the default template.
+    text_default, _ = generate_binary_question(is_aligned=True, coord_system_name="cartesian_2d")
+    assert "offset" not in text_default.lower()
+
+
 def test_categorical_returns_inverse():
     cs = get_coordinate_system("cartesian_2d")
     params = {"translation_x": 0.2, "translation_y": 0.0, "rotation_deg": 0.0, "scale": 0.0}
