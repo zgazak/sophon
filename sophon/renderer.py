@@ -26,7 +26,7 @@ def render_sample(
     """Render a single image with blue reference and red transformed points.
 
     If transformed_points is None, renders only the reference set in a
-    neutral color (used for coord_identification questions).
+    neutral color.
     """
     size = rendering_config.image_size
     dpi = 100

@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-VALID_COORDINATE_SYSTEMS = ["linear_1d", "cartesian_2d", "polar", "spherical", "all"]
+VALID_COORDINATE_SYSTEMS = ["linear_1d", "cartesian_2d", "polar", "all"]
 
 
 class RenderingConfig(BaseModel):
@@ -39,7 +39,7 @@ class QuestionConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal["binary", "categorical", "comparative", "quantitative", "coord_identification"]
+    type: Literal["binary", "categorical", "comparative", "quantitative"]
     alignment_threshold: float | None = None  # Only used for binary
     vocab_mode: Literal["restricted", "full"] = "restricted"  # Only used for categorical
     vocab_order: Literal["fixed", "random", "random_correct_last"] = "fixed"  # Only used for categorical
@@ -53,7 +53,7 @@ class BenchmarkSpec(BaseModel):
 
     name: str
     description: str = ""
-    coordinate_system: Literal["linear_1d", "cartesian_2d", "polar", "spherical", "all"]
+    coordinate_system: Literal["linear_1d", "cartesian_2d", "polar", "all"]
     rendering: RenderingConfig = Field(default_factory=RenderingConfig)
     points: PointsConfig
     transforms: dict[str, list[float]]  # field_name -> [min, max]

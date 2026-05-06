@@ -13,7 +13,6 @@ from sophon.questions import (
     generate_binary_question,
     generate_categorical_question,
     generate_comparative_question,
-    generate_coord_identification_question,
     generate_quantitative_question,
     has_quantitative_transform,
 )
@@ -21,8 +20,7 @@ from sophon.renderer import render_comparative, render_sample
 from sophon.schema import BenchmarkSpec, QuestionConfig, RenderingConfig, Sample
 from sophon.transforms import make_identity_transform
 
-_ALL_COORD_SYSTEMS = ["linear_1d", "cartesian_2d", "polar", "spherical"]
-_COORD_ID_SYSTEMS = ["linear_1d", "cartesian_2d", "polar"]
+_ALL_COORD_SYSTEMS = ["linear_1d", "cartesian_2d", "polar"]
 
 # Minimum misalignment in native coords, calibrated to ~3-4 dot diameters.
 # At 512px, point_radius=6, margin=0.1: 1 native unit ≈ 410px usable,
@@ -194,7 +192,7 @@ class BenchmarkGenerator:
 
     RNG discipline: a single numpy Generator created from PCG64(seed) is used
     sequentially. The draw order per sample is:
-      1. coordinate system selection (if coord_identification or all)
+      1. coordinate system selection (if coordinate_system: all)
       2. num_points (randint)
       3. reference points (generate_points)
       4. binary coin flip (if binary question)
@@ -283,17 +281,8 @@ class BenchmarkGenerator:
         q_type = question_config.type
         transforms = transforms_override if transforms_override is not None else spec.transforms
 
-        # 1. For coord_identification, cycle through coordinate systems
-        #    Use the numeric index from the ID for cycling (works for both
-        #    legacy int IDs and new string IDs like "spec_seed42_0003").
-        if q_type == "coord_identification":
-            if isinstance(sample_id, str):
-                idx = int(sample_id.rsplit("_", 1)[-1])
-            else:
-                idx = sample_id
-            cs_name = _COORD_ID_SYSTEMS[idx % len(_COORD_ID_SYSTEMS)]
-            cs = get_coordinate_system(cs_name)
-        elif cs_override is not None:
+        # 1. Resolve coordinate system
+        if cs_override is not None:
             cs = cs_override
         else:
             cs = self.coord_system
@@ -303,13 +292,7 @@ class BenchmarkGenerator:
         n_points = int(rng.integers(n_lo, n_hi + 1))
 
         # 3. Generate reference points
-        distribution = (
-            "coord_uniform" if q_type == "coord_identification" else spec.points.distribution
-        )
-        ref_points = cs.generate_points(n_points, rng, distribution, spec.points.margin)
-
-        if q_type == "coord_identification":
-            return self._gen_coord_id(cs, ref_points, n_points, sample_id, spec)
+        ref_points = cs.generate_points(n_points, rng, spec.points.distribution, spec.points.margin)
 
         if q_type == "comparative":
             return self._gen_comparative(
@@ -406,45 +389,6 @@ class BenchmarkGenerator:
             text_description=text_desc,
             num_points=n_points,
             show_grid=spec.rendering.show_grid,
-        )
-        return img, sample
-
-    def _gen_coord_id(
-        self,
-        cs: CoordinateSystem,
-        ref_points: np.ndarray,
-        n_points: int,
-        sample_id: int | str,
-        spec: BenchmarkSpec,
-    ) -> tuple[Image.Image | None, Sample]:
-        """Generate a coordinate-identification sample."""
-        identity = make_identity_transform(cs.supported_transforms)
-        render_config = spec.rendering.model_copy(update={"show_grid": False})
-
-        want_image = spec.output_mode in ("image", "both")
-        want_text = spec.output_mode in ("text_description", "both")
-
-        img = None
-        if want_image:
-            img = render_sample(cs, ref_points, None, identity, render_config, spec.points.margin)
-
-        text_desc = None
-        if want_text:
-            text_desc = _build_text_description(cs, ref_points, None)
-
-        q_text, answer = generate_coord_identification_question(cs)
-        sample = Sample(
-            sample_id=sample_id,
-            spec_name=spec.name,
-            coordinate_system=cs.name,
-            question_type="coord_identification",
-            question_text=q_text,
-            ground_truth=answer,
-            transform_params=identity,
-            transform_magnitude=0.0,
-            text_description=text_desc,
-            num_points=n_points,
-            show_grid=False,
         )
         return img, sample
 

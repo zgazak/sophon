@@ -26,7 +26,6 @@ from sophon.parsing import (
     parse_binary,
     parse_categorical,
     parse_comparative,
-    parse_coord_identification,
     parse_quantitative,
 )
 from sophon.questions import _QUANTITATIVE_ROTATION_KEYS, QUANTITATIVE_KEYS
@@ -287,8 +286,6 @@ def _parse_response(
         return parse_comparative(raw_response)
     elif question_type == "quantitative":
         return parse_quantitative(raw_response, take_abs=True)
-    elif question_type == "coord_identification":
-        return parse_coord_identification(raw_response)
     else:
         return ParseResult(raw_response=raw_response, parsed_answer=None, parse_success=False)
 
@@ -394,7 +391,6 @@ _CATEGORICAL_CHANCES: dict[str, float] = {
     "linear_1d": 1.0 / 2,  # 2 directions
     "cartesian_2d": 1.0 / 6,  # 6 directions (but typically 4 used for single-axis)
     "polar": 1.0 / 4,  # 4 directions
-    "spherical": 1.0 / 6,  # 6 directions
 }
 
 
@@ -469,8 +465,6 @@ def aggregate_results(
             chance = 0.5
             if q_type == "categorical":
                 chance = _CATEGORICAL_CHANCES.get(cs_name, 0.25)
-            elif q_type == "coord_identification":
-                chance = 1.0 / 3
             elif q_type in ("binary", "comparative"):
                 chance = 0.5
 
@@ -485,7 +479,6 @@ def aggregate_results(
         "binary": 0.50,
         "categorical": {cs: _CATEGORICAL_CHANCES.get(cs, 0.25) for cs in _CATEGORICAL_CHANCES},
         "comparative": 0.50,
-        "coord_identification": 1.0 / 3,
     }
 
     return {

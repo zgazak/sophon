@@ -12,5 +12,4 @@ specs:
   - polar_rotation.yaml
   - polar_radial.yaml
   - polar_radial_scale.yaml
-  - coord_identification.yaml
 seed: 42

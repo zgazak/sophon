@@ -169,8 +169,6 @@ def _write_conversation_format(out: Path, all_metadata: list[dict]) -> None:
                     assistant_content = f"{gt:.1f} degrees"
                 else:
                     assistant_content = str(gt)
-            elif m["question_type"] == "coord_identification":
-                assistant_content = str(gt)
             else:
                 assistant_content = str(gt)
 
@@ -330,7 +328,7 @@ def evaluate(
 
     # Build direction vocabularies for parsing
     dir_vocabs = {}
-    for cs_name in ["linear_1d", "cartesian_2d", "polar", "spherical"]:
+    for cs_name in ["linear_1d", "cartesian_2d", "polar"]:
         cs = get_coordinate_system(cs_name)
         dir_vocabs[cs_name] = cs.direction_vocabulary
 

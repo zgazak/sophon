@@ -25,10 +25,6 @@ RESTRICTED_VOCAB: dict[tuple[str, str], list[str]] = {
     ("polar", "angular_rotation_deg"): ["clockwise", "counterclockwise"],
     ("polar", "radial_shift"): ["inward", "outward"],
     ("polar", "radial_scale"): ["inward", "outward"],
-    # Spherical — uses system-specific direction vocabulary
-    ("spherical", "azimuth_rotation_deg"): ["rotate_azimuth_cw", "rotate_azimuth_ccw"],
-    ("spherical", "altitude_offset_deg"): ["shift_zenith_in", "shift_zenith_out"],
-    ("spherical", "roll_deg"): ["roll_cw", "roll_ccw"],
 }
 
 
@@ -99,12 +95,6 @@ _ANGULAR_TRANSFORM_TYPES = {
 COMPARATIVE_TEMPLATE = (
     "Which image shows better alignment between the blue and red point sets? "
     "Answer A or B."
-)
-
-COORD_ID_TEMPLATE = (
-    "These points are uniformly distributed in their native coordinate space. "
-    "What type of coordinate system are they arranged in? "
-    "Choose from: 1D linear, 2D Cartesian, circular"
 )
 
 # Quantitative: rotation and scale only (not translation — no axis labels to judge units)
@@ -302,18 +292,3 @@ def generate_quantitative_question(
     return question, ground_truth
 
 
-def generate_coord_identification_question(
-    coord_system: CoordinateSystem,
-) -> tuple[str, str]:
-    """Return (question_text, ground_truth: coordinate system name).
-
-    3-way classification: linear, Cartesian, circular.
-    """
-    name_map = {
-        "linear_1d": "1D linear",
-        "cartesian_2d": "2D Cartesian",
-        "polar": "circular",
-        "spherical": "circular",  # kept for forward compat
-    }
-    answer = name_map.get(coord_system.name, coord_system.name)
-    return COORD_ID_TEMPLATE, answer
