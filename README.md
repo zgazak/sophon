@@ -72,7 +72,7 @@ If you use Sophon in published work, please cite:
 
 ```bibtex
 @article{sophon2026,
-  title  = {{VLMs} Aren't Blind, They're Confused. {Sophon}: A Procedural Diagnostic for Spatial Reasoning},
+  title  = {{Sophon}: A Procedural Diagnostic for Spatial Reasoning in Vision-Language Models},
   year   = {2026}
 }
 ```
