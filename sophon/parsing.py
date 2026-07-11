@@ -177,9 +177,11 @@ def _is_list_marker(match: re.Match, text: str) -> bool:
     # "1. **Bold" — digit, period, space, markdown bold
     if re.match(r"\.\s+\*\*", after):
         return True
-    # "1.\n" — digit, period, end of line (but NOT "30." at end of sentence
-    # preceded by a word char — that's an answer ending with a period)
-    if re.match(r"\.\s*\n", after) or re.match(r"\.\s*$", after):
+    # "1.\n" — digit, period, end of line followed by MORE content.
+    # A list-marker pattern requires continuation text on a subsequent line;
+    # a standalone number at end-of-response (e.g. Idefics3's " 0.0." or
+    # " 90.") is the answer, not a marker, even with empty prefix.
+    if re.match(r"\.\s*\n", after):
         # Only treat as marker if the number is a bare integer at line start
         # or after a newline, not mid-sentence
         line_start = text.rfind("\n", 0, start) + 1
