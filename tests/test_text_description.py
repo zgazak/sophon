@@ -42,14 +42,6 @@ class TestDescribePoints:
         assert "r=0.200" in desc
         assert "r=0.500" in desc
 
-    def test_spherical(self):
-        cs = get_coordinate_system("spherical")
-        pts = np.array([[0.5, np.pi], [1.0, 0.0]])
-        desc = cs.describe_points(pts)
-        assert "hemisphere" in desc
-        assert "alt=" in desc
-        assert "az=" in desc
-
     def test_determinism(self):
         cs = get_coordinate_system("cartesian_2d")
         pts = cs.generate_points(20, make_rng(42), "uniform", 0.1)
@@ -164,27 +156,3 @@ output_mode: text_description
         for (_, s1), (_, s2) in zip(gen1.generate(), gen2.generate()):
             assert s1.text_description == s2.text_description
 
-    def test_coord_id_text_mode(self):
-        """Coord identification in text mode: single set, no transformed points."""
-        spec_yaml = """\
-name: coord_id_text
-coordinate_system: cartesian_2d
-points:
-  num_points: [10, 15]
-  margin: 0.1
-transforms:
-  translation_x: [0, 0]
-questions:
-  - type: coord_identification
-num_samples: 3
-seed: 42
-output_mode: text_description
-"""
-        spec = BenchmarkSpec(**yaml.safe_load(spec_yaml))
-        gen = BenchmarkGenerator(spec)
-        for img, sample in gen.generate():
-            assert img is None
-            assert sample.text_description is not None
-            assert "Blue points" in sample.text_description
-            # No "Red points" for coord_id
-            assert "Red points" not in sample.text_description

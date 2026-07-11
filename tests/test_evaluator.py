@@ -54,11 +54,6 @@ class TestParseResponse:
         result = _parse_response("quantitative", "About 15.5 degrees")
         assert result.parsed_answer == 15.5
 
-    def test_coord_id(self):
-        result = _parse_response("coord_identification", "This looks like a Cartesian grid")
-        assert result.parsed_answer == "2D Cartesian"
-
-
 class TestScoring:
     def test_is_correct(self):
         assert _is_correct("binary", "yes", "yes") is True

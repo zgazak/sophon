@@ -131,31 +131,3 @@ seed: 42
             assert img.size[0] > img.size[1]
 
 
-class TestCoordIdentification:
-    def test_coord_id_cycles_all_systems(self):
-        yaml_str = """\
-name: coord_id_test
-coordinate_system: cartesian_2d
-points:
-  num_points: [20, 30]
-  margin: 0.1
-transforms:
-  translation_x: [0, 0]
-questions:
-  - type: coord_identification
-num_samples: 9
-seed: 42
-"""
-        spec = _make_spec(yaml_str)
-        gen = BenchmarkGenerator(spec)
-        answers = []
-        for img, sample in gen.generate():
-            assert sample.question_type == "coord_identification"
-            assert isinstance(img, Image.Image)
-            answers.append(sample.ground_truth)
-        # 3-way: cycles through linear, cartesian, polar
-        assert set(answers) == {"1D linear", "2D Cartesian", "circular"}
-        # 9 samples cycling 3 systems = 3 each
-        assert answers.count("1D linear") == 3
-        assert answers.count("2D Cartesian") == 3
-        assert answers.count("circular") == 3

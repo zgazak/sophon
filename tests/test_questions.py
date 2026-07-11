@@ -5,7 +5,6 @@ from sophon.questions import (
     generate_binary_question,
     generate_categorical_question,
     generate_comparative_question,
-    generate_coord_identification_question,
     generate_quantitative_question,
 )
 from sophon.transforms import _DIRECTION_INVERSES
@@ -86,7 +85,7 @@ def test_categorical_y_matches_visual_direction():
 
 
 def test_categorical_valid_direction():
-    for name in ["linear_1d", "cartesian_2d", "polar", "spherical"]:
+    for name in ["linear_1d", "cartesian_2d", "polar"]:
         cs = get_coordinate_system(name)
         # Make a non-zero transform
         params = {k: 0.1 for k in cs.supported_transforms}
@@ -202,18 +201,3 @@ def test_quantitative_translation_only_returns_none():
     assert result is None
 
 
-def test_coord_identification():
-    for name, expected in [
-        ("linear_1d", "1D linear"),
-        ("cartesian_2d", "2D Cartesian"),
-        ("polar", "circular"),
-        ("spherical", "circular"),
-    ]:
-        cs = get_coordinate_system(name)
-        text, answer = generate_coord_identification_question(cs)
-        assert answer == expected
-        assert "coordinate system" in text.lower()
-    # Template should offer 3-way choice
-    cs = get_coordinate_system("cartesian_2d")
-    text, _ = generate_coord_identification_question(cs)
-    assert "circular" in text

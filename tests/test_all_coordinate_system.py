@@ -60,10 +60,8 @@ seed: 42
             cs = sample.coordinate_system
             cs_counts[cs] = cs_counts.get(cs, 0) + 1
 
-        # 8 samples / 4 systems = 2 each
-        assert set(cs_counts.keys()) == {"linear_1d", "cartesian_2d", "polar", "spherical"}
-        for cs, count in cs_counts.items():
-            assert count == 2, f"{cs} got {count} samples, expected 2"
+        # 8 samples / 3 systems = 2 each + 2 remainder to the first systems
+        assert cs_counts == {"linear_1d": 3, "cartesian_2d": 3, "polar": 2}
 
     def test_correct_transforms_per_system(self):
         """Each coordinate system should only get its applicable transforms."""
@@ -99,9 +97,6 @@ seed: 42
             elif cs == "polar":
                 assert "radial_shift" in params
                 assert "angular_rotation_deg" in params
-            elif cs == "spherical":
-                assert "azimuth_rotation_deg" in params
-                assert "altitude_offset_deg" in params
 
     def test_deterministic_ordering(self):
         """All linear_1d first, then cartesian_2d, etc."""
@@ -125,9 +120,9 @@ seed: 42
         spec = BenchmarkSpec(**yaml.safe_load(spec_yaml))
         gen = BenchmarkGenerator(spec)
         cs_order = [sample.coordinate_system for _, sample in gen.generate()]
-        # Should be grouped: linear, cartesian, polar, spherical
+        # Should be grouped: linear, cartesian, polar
         expected_order = (
-            ["linear_1d"] * 2 + ["cartesian_2d"] * 2 + ["polar"] * 2 + ["spherical"] * 2
+            ["linear_1d"] * 3 + ["cartesian_2d"] * 3 + ["polar"] * 2
         )
         assert cs_order == expected_order
 
@@ -157,8 +152,7 @@ seed: 42
             cs = sample.coordinate_system
             cs_counts[cs] = cs_counts.get(cs, 0) + 1
 
-        # 5 / 4 = 1 each + 1 remainder -> first system gets 2
+        # 5 / 3 = 1 each + 2 remainder -> first two systems get 2
         assert cs_counts["linear_1d"] == 2
-        assert cs_counts["cartesian_2d"] == 1
+        assert cs_counts["cartesian_2d"] == 2
         assert cs_counts["polar"] == 1
-        assert cs_counts["spherical"] == 1

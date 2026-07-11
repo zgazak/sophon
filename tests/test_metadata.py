@@ -46,25 +46,6 @@ seed: 42
         for _, sample in gen.generate():
             assert sample.show_grid is True
 
-    def test_coord_id_grid_false(self):
-        spec_yaml = """\
-name: coord_id_grid_test
-coordinate_system: cartesian_2d
-points:
-  num_points: [10, 15]
-  margin: 0.1
-transforms:
-  translation_x: [0, 0]
-questions:
-  - type: coord_identification
-num_samples: 3
-seed: 42
-"""
-        spec = BenchmarkSpec(**yaml.safe_load(spec_yaml))
-        gen = BenchmarkGenerator(spec)
-        for _, sample in gen.generate():
-            assert sample.show_grid is False
-
     def test_transform_direction_for_categorical(self):
         spec_yaml = """\
 name: dir_meta_test

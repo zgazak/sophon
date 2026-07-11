@@ -7,7 +7,6 @@ from sophon.parsing import (
     parse_binary,
     parse_categorical,
     parse_comparative,
-    parse_coord_identification,
     parse_quantitative,
 )
 
@@ -394,41 +393,3 @@ class TestParseQuantitative:
         assert r.parsed_answer == pytest.approx(-15.0)
 
 
-# =========================================================================
-# Coordinate identification
-# =========================================================================
-
-class TestParseCoordIdentification:
-    def test_cartesian(self):
-        r = parse_coord_identification("This is a 2D Cartesian coordinate system")
-        assert r.parsed_answer == "2D Cartesian"
-
-    def test_polar(self):
-        r = parse_coord_identification("polar")
-        assert r.parsed_answer == "circular"
-
-    def test_spherical(self):
-        r = parse_coord_identification("spherical")
-        assert r.parsed_answer == "circular"
-
-    def test_circular(self):
-        r = parse_coord_identification("circular")
-        assert r.parsed_answer == "circular"
-
-    def test_fisheye_alias(self):
-        r = parse_coord_identification("It looks like a fisheye projection")
-        assert r.parsed_answer == "circular"
-
-    def test_unparseable(self):
-        r = parse_coord_identification("I don't know")
-        assert r.parse_success is False
-
-    def test_last_keyword_wins(self):
-        r = parse_coord_identification(
-            "At first it looks linear but actually this is 2D Cartesian"
-        )
-        assert r.parsed_answer == "2D Cartesian"
-
-    def test_linear(self):
-        r = parse_coord_identification("1D linear")
-        assert r.parsed_answer == "1D linear"

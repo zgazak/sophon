@@ -44,7 +44,7 @@ class TestRenderSample:
         assert diff.getbbox() is None, "Identical inputs should produce identical images"
 
     def test_all_coordinate_systems(self):
-        for name in ["linear_1d", "cartesian_2d", "polar", "spherical"]:
+        for name in ["linear_1d", "cartesian_2d", "polar"]:
             cs, ref, trans, params = _generate_test_data(name)
             img = render_sample(cs, ref, trans, params, RenderingConfig(), 0.1)
             assert isinstance(img, Image.Image)
@@ -70,7 +70,7 @@ class TestRenderComparative:
         assert img.size[0] > img.size[1]
 
     def test_all_coordinate_systems(self):
-        for name in ["linear_1d", "cartesian_2d", "polar", "spherical"]:
+        for name in ["linear_1d", "cartesian_2d", "polar"]:
             cs, ref, trans, params = _generate_test_data(name)
             rng = make_rng(99)
             ranges = {k: [-0.1, 0.1] for k in cs.supported_transforms}

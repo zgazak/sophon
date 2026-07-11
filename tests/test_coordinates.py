@@ -7,13 +7,11 @@ from sophon.coordinates import get_coordinate_system
 from sophon.coordinates.cartesian import Cartesian2D
 from sophon.coordinates.linear import Linear1D
 from sophon.coordinates.polar import Polar
-from sophon.coordinates.spherical import Spherical
 
 ALL_SYSTEMS = [
     ("linear_1d", Linear1D),
     ("cartesian_2d", Cartesian2D),
     ("polar", Polar),
-    ("spherical", Spherical),
 ]
 
 
@@ -60,6 +58,23 @@ class TestGeneratePoints:
     def test_unknown_distribution(self, coord_system):
         with pytest.raises(ValueError, match="Unknown distribution"):
             coord_system.generate_points(10, make_rng(), "spiral", 0.1)
+
+
+def _make_ranges(coord_system) -> dict[str, list[float]]:
+    """Create test transform ranges for a coordinate system."""
+    range_map = {
+        "translation_x": [-0.15, 0.15],
+        "translation_y": [-0.15, 0.15],
+        "rotation_deg": [-30.0, 30.0],
+        "scale": [-0.2, 0.2],
+        "radial_shift": [-0.2, 0.2],
+        "angular_rotation_deg": [-30.0, 30.0],
+        "radial_scale": [-0.2, 0.2],
+        "azimuth_rotation_deg": [-30.0, 30.0],
+        "altitude_offset_deg": [-15.0, 15.0],
+        "roll_deg": [-20.0, 20.0],
+    }
+    return {k: range_map[k] for k in coord_system.supported_transforms if k in range_map}
 
 
 class TestApplyTransform:
@@ -234,55 +249,3 @@ class TestPolar:
         )
 
 
-class TestSpherical:
-    def test_azimuth_rotation(self):
-        cs = Spherical()
-        pts = np.array([[0.5, 0.0], [0.5, np.pi]])
-        result = cs.apply_transform(pts, {"azimuth_rotation_deg": 90.0})
-        expected_az = np.array([np.pi / 2, 3 * np.pi / 2])
-        np.testing.assert_allclose(result[:, 1], expected_az, atol=1e-10)
-
-    def test_altitude_offset(self):
-        cs = Spherical()
-        pts = np.array([[0.5, 1.0]])
-        result = cs.apply_transform(pts, {"altitude_offset_deg": 10.0})
-        expected_alt = 0.5 + np.radians(10.0)
-        np.testing.assert_allclose(result[0, 0], expected_alt, atol=1e-10)
-
-    def test_altitude_clamp(self):
-        cs = Spherical()
-        pts = np.array([[np.pi / 2 - 0.01, 0.0]])  # Near zenith
-        result = cs.apply_transform(pts, {"altitude_offset_deg": 10.0})
-        assert result[0, 0] <= np.pi / 2
-
-    def test_zenith_maps_to_center(self):
-        cs = Spherical()
-        # Point at zenith (altitude = pi/2)
-        pts = np.array([[np.pi / 2, 0.0]])
-        img = cs.to_image_coords(pts, 512, 0.1)
-        np.testing.assert_allclose(img[0], [256, 256], atol=1.0)
-
-    def test_roll_rotates_image(self):
-        cs = Spherical()
-        pts = np.array([[0.5, 0.0]])  # Some point
-        img_no_roll = cs.to_image_coords(pts, 512, 0.1, roll_deg=0.0)
-        img_with_roll = cs.to_image_coords(pts, 512, 0.1, roll_deg=90.0)
-        # After 90° roll, coordinates should change
-        assert not np.allclose(img_no_roll, img_with_roll, atol=1.0)
-
-
-def _make_ranges(coord_system) -> dict[str, list[float]]:
-    """Create test transform ranges for a coordinate system."""
-    range_map = {
-        "translation_x": [-0.15, 0.15],
-        "translation_y": [-0.15, 0.15],
-        "rotation_deg": [-30.0, 30.0],
-        "scale": [-0.2, 0.2],
-        "radial_shift": [-0.2, 0.2],
-        "angular_rotation_deg": [-30.0, 30.0],
-        "radial_scale": [-0.2, 0.2],
-        "azimuth_rotation_deg": [-30.0, 30.0],
-        "altitude_offset_deg": [-15.0, 15.0],
-        "roll_deg": [-20.0, 20.0],
-    }
-    return {k: range_map[k] for k in coord_system.supported_transforms if k in range_map}
