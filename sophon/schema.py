@@ -60,6 +60,12 @@ class BenchmarkSpec(BaseModel):
     questions: list[QuestionConfig]
     num_samples: int = 1000
     seed: int = 42
+    # "exact": stratified label balance — categorical/quantitative draw evenly
+    # over (direction-mappable / quantitative transform × sign); binary draws
+    # exactly half aligned; comparative crosses tier × A/B evenly. Counts per
+    # stratum differ by ≤1 when n is not divisible. "random" (default) keeps
+    # the historical uniform-draw behavior.
+    balance: Literal["random", "exact"] = "random"
     output_mode: Literal["image", "text_description", "both"] = "image"
     output_format: Literal["standard", "conversation"] = "standard"
     system_prompt: str | None = None

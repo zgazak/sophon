@@ -10,6 +10,7 @@ from PIL import Image
 from sophon.coordinates import get_coordinate_system
 from sophon.coordinates.base import CoordinateSystem
 from sophon.questions import (
+    QUANTITATIVE_KEYS,
     direction_mappable_transforms,
     generate_binary_question,
     generate_categorical_question,
@@ -39,6 +40,73 @@ _MIN_MISALIGNMENT: dict[str, float] = {
     "radial_shift": 0.10,
     "altitude_offset_deg": 8.0,
 }
+
+
+def _signed_keys(transform_ranges: dict[str, list[float]], keys: list[str]):
+    """(key, sign) strata for keys whose active range spans that sign."""
+    strata = []
+    for k in keys:
+        if k not in transform_ranges or transform_ranges[k] == [0.0, 0.0]:
+            continue
+        lo, hi = transform_ranges[k]
+        if hi > 0:
+            strata.append((k, +1))
+        if lo < 0:
+            strata.append((k, -1))
+    return strata
+
+
+def _build_exact_schedules(
+    rng: np.random.Generator,
+    cs: CoordinateSystem,
+    transform_ranges: dict[str, list[float]],
+    question_configs,
+    n: int,
+) -> dict[str, list]:
+    """balance=exact: per question type, a shuffled length-n stratum schedule.
+
+    Strata are repeated round-robin to length n (counts differ by ≤1) and
+    shuffled with the spec rng so labels are exactly balanced but not
+    positionally correlated.
+    """
+    schedules: dict[str, list] = {}
+    for qc in question_configs:
+        qt = qc.type
+        if qt == "categorical":
+            strata = _signed_keys(
+                transform_ranges, direction_mappable_transforms(cs.name))
+        elif qt == "quantitative":
+            keys = [k for k in cs.supported_transforms if k in QUANTITATIVE_KEYS]
+            strata = _signed_keys(transform_ranges, keys)
+        elif qt == "binary":
+            strata = [True, False]  # is_aligned
+        elif qt == "comparative":
+            strata = [(e, a) for e in (True, False) for a in (True, False)]
+        else:
+            continue
+        if not strata:
+            continue
+        reps = [strata[i % len(strata)] for i in range(n)]
+        order = rng.permutation(n)
+        schedules[qt] = [reps[i] for i in order]
+    return schedules
+
+
+def _sample_signed_single_transform(
+    rng: np.random.Generator,
+    cs: CoordinateSystem,
+    transform_ranges: dict[str, list[float]],
+    key: str,
+    sign: int,
+) -> dict[str, float]:
+    """Sample one transform restricted to a sign stratum, zeroing all others."""
+    lo, hi = transform_ranges[key]
+    params = make_identity_transform(cs.supported_transforms)
+    if sign > 0:
+        params[key] = float(rng.uniform(max(0.0, lo), hi))
+    else:
+        params[key] = float(rng.uniform(lo, min(0.0, hi)))
+    return params
 
 
 def _sample_single_transform(
@@ -240,11 +308,21 @@ class BenchmarkGenerator:
     def _generate_single_coord(
         self, rng: np.random.Generator
     ) -> Iterator[tuple[Image.Image | None, Sample]]:
+        schedules = (
+            _build_exact_schedules(
+                rng, self.coord_system, self.spec.transforms,
+                self.spec.questions, self.spec.num_samples)
+            if self.spec.balance == "exact" else {}
+        )
         sample_idx = 0
         for _sample_idx in range(self.spec.num_samples):
             for question_config in self.spec.questions:
                 sid = self._make_sample_id(sample_idx)
-                result = self._generate_one(rng, sid, question_config)
+                sched = schedules.get(question_config.type)
+                result = self._generate_one(
+                    rng, sid, question_config,
+                    stratum=sched[_sample_idx] if sched is not None else None,
+                )
                 if result is not None:
                     yield result
                     sample_idx += 1
@@ -262,15 +340,22 @@ class BenchmarkGenerator:
             n_samples = per_cs + (1 if cs_idx < remainder else 0)
             transforms = _filter_transforms_for_cs(cs, self.spec.transforms)
 
+            schedules = (
+                _build_exact_schedules(
+                    rng, cs, transforms, self.spec.questions, n_samples)
+                if self.spec.balance == "exact" else {}
+            )
             for _sample_idx in range(n_samples):
                 for question_config in self.spec.questions:
                     sid = self._make_sample_id(sample_idx)
+                    sched = schedules.get(question_config.type)
                     result = self._generate_one(
                         rng,
                         sid,
                         question_config,
                         cs_override=cs,
                         transforms_override=transforms,
+                        stratum=sched[_sample_idx] if sched is not None else None,
                     )
                     if result is not None:
                         yield result
@@ -283,6 +368,7 @@ class BenchmarkGenerator:
         question_config: QuestionConfig,
         cs_override: CoordinateSystem | None = None,
         transforms_override: dict[str, list[float]] | None = None,
+        stratum=None,
     ) -> tuple[Image.Image | None, Sample] | None:
         spec = self.spec
         q_type = question_config.type
@@ -311,13 +397,14 @@ class BenchmarkGenerator:
                 spec,
                 question_config,
                 transforms,
+                stratum=stratum,
             )
 
         # Standard single-transform questions (binary, categorical, quantitative)
-        # 4. Binary coin flip
+        # 4. Binary coin flip (balance=exact: scheduled)
         is_aligned = False
         if q_type == "binary":
-            is_aligned = bool(rng.random() < 0.5)
+            is_aligned = bool(rng.random() < 0.5) if stratum is None else bool(stratum)
 
         # 5. Sample transform
         if is_aligned:
@@ -325,10 +412,19 @@ class BenchmarkGenerator:
         elif q_type == "binary":
             transform_params = _sample_misaligned_transform(rng, cs, transforms, spec.rendering)
         elif q_type == "categorical":
-            transform_params = _sample_single_transform(
-                rng, cs, transforms,
-                allowed_keys=direction_mappable_transforms(cs.name),
-            )
+            if stratum is not None:
+                key, sign = stratum
+                transform_params = _sample_signed_single_transform(
+                    rng, cs, transforms, key, sign)
+            else:
+                transform_params = _sample_single_transform(
+                    rng, cs, transforms,
+                    allowed_keys=direction_mappable_transforms(cs.name),
+                )
+        elif q_type == "quantitative" and stratum is not None:
+            key, sign = stratum
+            transform_params = _sample_signed_single_transform(
+                rng, cs, transforms, key, sign)
         else:
             transform_params = cs.sample_transform(rng, transforms)
 
@@ -421,6 +517,7 @@ class BenchmarkGenerator:
         spec: BenchmarkSpec,
         question_config: QuestionConfig,
         transforms: dict[str, list[float]],
+        stratum=None,
     ) -> tuple[Image.Image | None, Sample]:
         """Generate a comparative A|B sample with a clear winner.
 
@@ -430,7 +527,7 @@ class BenchmarkGenerator:
 
         The "better" panel is randomly assigned to A or B.
         """
-        is_easy = bool(rng.random() < 0.5)
+        is_easy = bool(rng.random() < 0.5) if stratum is None else bool(stratum[0])
 
         if is_easy:
             params_better = _sample_aligned_transform(rng, cs, transforms, spec.rendering)
@@ -441,7 +538,7 @@ class BenchmarkGenerator:
             params_worse = {k: v * multiplier for k, v in params_better.items()}
 
         # Randomly assign to A or B
-        better_is_a = bool(rng.random() < 0.5)
+        better_is_a = bool(rng.random() < 0.5) if stratum is None else bool(stratum[1])
         if better_is_a:
             params_a, params_b = params_better, params_worse
         else:
