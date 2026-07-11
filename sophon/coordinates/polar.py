@@ -149,7 +149,11 @@ class Polar(CoordinateSystem):
             candidates.append((abs(rsc), "outward" if rsc > 0 else "inward"))
 
         if not candidates:
-            return "outward"  # fallback
+            raise ValueError(
+                "classify_direction: no nonzero transform component in "
+                f"params={transform_params!r}; cannot classify a direction "
+                "for an identity transform."
+            )
 
         candidates.sort(key=lambda x: x[0], reverse=True)
         return candidates[0][1]

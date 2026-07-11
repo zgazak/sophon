@@ -10,6 +10,7 @@ from PIL import Image
 from sophon.coordinates import get_coordinate_system
 from sophon.coordinates.base import CoordinateSystem
 from sophon.questions import (
+    direction_mappable_transforms,
     generate_binary_question,
     generate_categorical_question,
     generate_comparative_question,
@@ -44,16 +45,22 @@ def _sample_single_transform(
     rng: np.random.Generator,
     cs: CoordinateSystem,
     transform_ranges: dict[str, list[float]],
+    allowed_keys: list[str] | None = None,
 ) -> dict[str, float]:
     """Sample exactly one transform type, zeroing all others.
 
     For categorical questions: ensures the direction answer is unambiguous.
-    Picks one active key (with nonzero range) at random.
+    Picks one active key (with nonzero range) at random. ``allowed_keys``
+    additionally restricts the draw (categorical passes the coordinate
+    system's direction-mappable transforms so ill-posed pairings such as
+    cartesian scale + direction question cannot occur).
     """
     active_keys = [
         k
         for k in cs.supported_transforms
-        if k in transform_ranges and transform_ranges[k] != [0.0, 0.0]
+        if k in transform_ranges
+        and transform_ranges[k] != [0.0, 0.0]
+        and (allowed_keys is None or k in allowed_keys)
     ]
     if not active_keys:
         return make_identity_transform(cs.supported_transforms)
@@ -318,12 +325,24 @@ class BenchmarkGenerator:
         elif q_type == "binary":
             transform_params = _sample_misaligned_transform(rng, cs, transforms, spec.rendering)
         elif q_type == "categorical":
-            transform_params = _sample_single_transform(rng, cs, transforms)
+            transform_params = _sample_single_transform(
+                rng, cs, transforms,
+                allowed_keys=direction_mappable_transforms(cs.name),
+            )
         else:
             transform_params = cs.sample_transform(rng, transforms)
 
         # Quantitative only applies to rotation/scale — skip if only translation
         if q_type == "quantitative" and not has_quantitative_transform(transform_params):
+            return None
+
+        # Categorical only applies to direction-mappable transforms — skip if
+        # the spec enables none for this coordinate system (mirrors the
+        # quantitative skip above; identity params here mean no mappable
+        # transform had a nonzero range).
+        if q_type == "categorical" and all(
+            abs(v) <= 1e-6 for v in transform_params.values()
+        ):
             return None
 
         transformed = cs.apply_transform(ref_points, transform_params)

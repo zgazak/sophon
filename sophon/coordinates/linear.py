@@ -94,7 +94,13 @@ class Linear1D(CoordinateSystem):
 
     def classify_direction(self, transform_params: dict[str, float]) -> str:
         tx = transform_params.get("translation_x", 0.0)
-        return "right" if tx >= 0 else "left"
+        if abs(tx) <= 1e-6:
+            raise ValueError(
+                "classify_direction: translation_x is zero in "
+                f"params={transform_params!r}; cannot classify a direction "
+                "for an identity transform."
+            )
+        return "right" if tx > 0 else "left"
 
     def transform_magnitude(self, transform_params: dict[str, float]) -> float:
         return abs(transform_params.get("translation_x", 0.0))

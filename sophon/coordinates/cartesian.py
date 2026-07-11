@@ -141,7 +141,12 @@ class Cartesian2D(CoordinateSystem):
             pass
 
         if not candidates:
-            return "right"  # fallback for identity
+            raise ValueError(
+                "classify_direction: no direction-mappable transform component "
+                f"in params={transform_params!r}. Cartesian 'scale' has no "
+                "direction reading; categorical sampling must draw from "
+                "direction_mappable_transforms() (sophon.questions)."
+            )
 
         candidates.sort(key=lambda x: x[0], reverse=True)
         return candidates[0][1]

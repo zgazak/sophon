@@ -114,10 +114,12 @@ class TestClassifyDirection:
         direction = coord_system.classify_direction(params)
         assert direction in coord_system.direction_vocabulary
 
-    def test_identity_returns_something(self, coord_system):
+    def test_identity_raises(self, coord_system):
+        # Identity has no direction; fabricating one produced the pre-2026-07
+        # constant-label degeneracy (cartesian scale -> "left").
         identity = {k: 0.0 for k in coord_system.supported_transforms}
-        direction = coord_system.classify_direction(identity)
-        assert direction in coord_system.direction_vocabulary
+        with pytest.raises(ValueError):
+            coord_system.classify_direction(identity)
 
 
 class TestTransformMagnitude:

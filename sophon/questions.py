@@ -38,6 +38,20 @@ def get_restricted_vocab(
     return RESTRICTED_VOCAB.get((coord_system_name, transform_type))
 
 
+def direction_mappable_transforms(coord_system_name: str) -> list[str]:
+    """Transforms whose direction this coordinate system can classify.
+
+    Derived from RESTRICTED_VOCAB — the authoritative map of
+    (coordinate_system, transform) pairs that have a direction answer.
+    Transforms outside this set (e.g. cartesian_2d "scale") have no direction
+    reading: pairing them with a categorical question forces
+    classify_direction to fabricate an answer, producing ill-posed items with
+    a constant label (the pre-2026-07 all-"left" degeneracy on cartesian
+    scale samples). Categorical sampling must draw only from this set.
+    """
+    return [t for (c, t) in RESTRICTED_VOCAB if c == coord_system_name]
+
+
 def detect_active_transform(transform_params: dict[str, float]) -> str | None:
     """Return the single active (nonzero) transform key, or None if ambiguous."""
     active = [k for k, v in transform_params.items() if abs(v) > 1e-9]
