@@ -44,8 +44,8 @@ def render_sample(
     if transformed_points is None:
         # Single-set rendering (coord identification): neutral color, no offset
         ref_img = coord_system.to_image_coords(reference_points, size, margin)
-        _plot_points(ax, ref_img, "#7C3AED", dot_size)  # Purple, neutral
-        return _fig_to_image(fig, size)
+        _plot_points(ax, ref_img, "#7C3AED", dot_size, marker=rendering_config.marker)  # Purple, neutral
+        return _fig_to_image(fig, size, background=rendering_config.background_color)
 
     # Project to image coordinates
     ref_img = coord_system.to_image_coords(reference_points, size, margin)
@@ -65,10 +65,12 @@ def render_sample(
     if coord_system.ndim == 1:
         y_offset = size * 0.04
 
-    _plot_points(ax, ref_img, rendering_config.color_a, dot_size, y_offset=-y_offset)
-    _plot_points(ax, trans_img, rendering_config.color_b, dot_size, y_offset=y_offset)
+    _plot_points(ax, ref_img, rendering_config.color_a, dot_size, y_offset=-y_offset,
+                 marker=rendering_config.marker_a or rendering_config.marker)
+    _plot_points(ax, trans_img, rendering_config.color_b, dot_size, y_offset=y_offset,
+                 marker=rendering_config.marker_b or rendering_config.marker)
 
-    return _fig_to_image(fig, size)
+    return _fig_to_image(fig, size, background=rendering_config.background_color)
 
 
 def render_comparative(
@@ -108,8 +110,10 @@ def render_comparative(
 
         dot_size = rendering_config.point_radius**2
         y_offset = size * 0.04 if coord_system.ndim == 1 else 0.0
-        _plot_points(ax, ref_img, rendering_config.color_a, dot_size, y_offset=-y_offset)
-        _plot_points(ax, trans_img, rendering_config.color_b, dot_size, y_offset=y_offset)
+        _plot_points(ax, ref_img, rendering_config.color_a, dot_size, y_offset=-y_offset,
+                     marker=rendering_config.marker_a or rendering_config.marker)
+        _plot_points(ax, trans_img, rendering_config.color_b, dot_size, y_offset=y_offset,
+                     marker=rendering_config.marker_b or rendering_config.marker)
 
         # Panel label
         ax.text(
@@ -123,7 +127,7 @@ def render_comparative(
         )
 
     plt.subplots_adjust(wspace=0.02, left=0, right=1, top=1, bottom=0)
-    return _fig_to_image(fig, size, width_multiplier=2)
+    return _fig_to_image(fig, size, width_multiplier=2, background=rendering_config.background_color)
 
 
 def _setup_axes(ax, size: int, config: RenderingConfig) -> None:
@@ -136,12 +140,13 @@ def _setup_axes(ax, size: int, config: RenderingConfig) -> None:
 
 
 def _plot_points(
-    ax, img_coords: np.ndarray, color: str, dot_size: float, y_offset: float = 0.0
+    ax, img_coords: np.ndarray, color: str, dot_size: float, y_offset: float = 0.0,
+    marker: str = "o",
 ) -> None:
     """Scatter plot points in pixel coordinates."""
     x = img_coords[:, 0]
     y = img_coords[:, 1] + y_offset
-    ax.scatter(x, y, s=dot_size, c=color, alpha=0.8, edgecolors="none", zorder=5)
+    ax.scatter(x, y, s=dot_size, c=color, alpha=0.8, edgecolors="none", zorder=5, marker=marker)
 
 
 def render_preview(
@@ -204,9 +209,9 @@ def _wrap_lines(lines: list[str], text: str, max_chars: int) -> None:
         lines.append(current)
 
 
-def _fig_to_image(fig, size: int, width_multiplier: int = 1) -> Image.Image:
+def _fig_to_image(fig, size: int, width_multiplier: int = 1, background: str = "#F8F8F8") -> Image.Image:
     """Convert matplotlib figure to PIL Image."""
-    fig.patch.set_facecolor("#F8F8F8")
+    fig.patch.set_facecolor(background)
     buf = io.BytesIO()
     fig.savefig(buf, format="png", facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close(fig)

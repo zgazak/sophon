@@ -19,6 +19,9 @@ class RenderingConfig(BaseModel):
     color_a: str = "#2563EB"  # Blue (reference)
     color_b: str = "#DC2626"  # Red (transformed)
     point_radius: float = 6.0
+    marker: str = "o"  # matplotlib marker; use filled markers (o/s/^/D/v/P/X) so edgecolors="none" stays visible
+    marker_a: str | None = None  # reference-set marker override; falls back to `marker`
+    marker_b: str | None = None  # transformed-set marker override; falls back to `marker`
     show_grid: bool = True
     grid_color: str = "#E0E0E0"
     grid_alpha: float = 0.5
