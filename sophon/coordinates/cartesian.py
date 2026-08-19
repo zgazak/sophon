@@ -171,10 +171,16 @@ class Cartesian2D(CoordinateSystem):
         return params
 
     def describe_points(self, points: np.ndarray) -> str:
+        # Describe the DISPLAY frame, not the native math frame: to_image_coords
+        # flips y for image convention, and every direction ground-truth word
+        # ("up"/"down", "clockwise"/"counterclockwise") is defined in the rendered
+        # frame. Printing raw math-frame y reversed the trans_y and rotation GTs
+        # in text_description mode (audited 2026-08-03: 8/8 inverted on both).
+        # y' = 1 - y keeps the stated [0, 1] range and the x-based sort order.
         sorted_pts = points[points[:, 0].argsort()]
         lines = [
             "Points in a 2D Cartesian coordinate system with x \u2208 [0, 1] and y \u2208 [0, 1]:"
         ]
         for i, pt in enumerate(sorted_pts):
-            lines.append(f"  Point {i + 1}: ({pt[0]:.3f}, {pt[1]:.3f})")
+            lines.append(f"  Point {i + 1}: ({pt[0]:.3f}, {1.0 - pt[1]:.3f})")
         return "\n".join(lines)

@@ -177,13 +177,17 @@ class Polar(CoordinateSystem):
         return params
 
     def describe_points(self, points: np.ndarray) -> str:
+        # Describe the DISPLAY frame (see CartesianSystem.describe_points):
+        # to_image_coords flips y, which mirrors the angular direction, so the
+        # displayed angle is (360 - \u03b8) mod 360. r is flip-invariant. Without this,
+        # angular-rotation direction GTs are reversed in text_description mode.
         sorted_pts = points[points[:, 0].argsort()]
         lines = [
             "Points in a polar coordinate system "
             "with r \u2208 [0, 1] and \u03b8 \u2208 [0\u00b0, 360\u00b0):"
         ]
         for i, pt in enumerate(sorted_pts):
-            theta_deg = np.degrees(pt[1])
+            theta_deg = (360.0 - np.degrees(pt[1])) % 360.0
             lines.append(f"  Point {i + 1}: (r={pt[0]:.3f}, \u03b8={theta_deg:.1f}\u00b0)")
         return "\n".join(lines)
 
