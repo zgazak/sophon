@@ -37,3 +37,60 @@ def test_make_identity_transform():
 
 def test_make_identity_empty():
     assert make_identity_transform([]) == {}
+
+
+class TestShortestArcWrap:
+    """Rotation ground truth must follow the shortest arc the question promises.
+
+    Categorical rotation questions ask which way a set should move "over the
+    shortest arc". Classifying on the raw angle labels a +190 deg rotation as
+    the long way round, contradicting the prompt. Only |angle| > 180 is
+    affected, so the usual +-45 deg training range is unchanged.
+    """
+
+    def test_wrap_angle_deg(self):
+        from sophon.transforms import wrap_angle_deg
+
+        assert wrap_angle_deg(30) == 30
+        assert wrap_angle_deg(-30) == -30
+        assert wrap_angle_deg(190) == pytest.approx(-170)
+        assert wrap_angle_deg(350) == pytest.approx(-10)
+        assert wrap_angle_deg(-190) == pytest.approx(170)
+        assert wrap_angle_deg(370) == pytest.approx(10)
+        # (-180, 180]: exactly-180 maps to +180, not -180
+        assert wrap_angle_deg(180) == 180
+        assert wrap_angle_deg(-180) == 180
+
+    def test_cartesian_direction_follows_shortest_arc(self):
+        from sophon.coordinates import get_coordinate_system
+
+        cs = get_coordinate_system("cartesian_2d")
+        # +190 deg is a 170 deg turn the other way, so it must classify opposite
+        # to +170 deg.
+        near = cs.classify_direction({"rotation_deg": 170.0})
+        past = cs.classify_direction({"rotation_deg": 190.0})
+        assert near != past, "190 deg must classify opposite to 170 deg"
+        assert cs.classify_direction({"rotation_deg": 350.0}) == cs.classify_direction(
+            {"rotation_deg": -10.0}
+        )
+
+    def test_polar_direction_follows_shortest_arc(self):
+        from sophon.coordinates import get_coordinate_system
+
+        cs = get_coordinate_system("polar")
+        near = cs.classify_direction({"angular_rotation_deg": 170.0})
+        past = cs.classify_direction({"angular_rotation_deg": 190.0})
+        assert near != past
+        assert cs.classify_direction({"angular_rotation_deg": 350.0}) == (
+            cs.classify_direction({"angular_rotation_deg": -10.0})
+        )
+
+    def test_magnitude_uses_shortest_arc(self):
+        from sophon.coordinates import get_coordinate_system
+
+        cs = get_coordinate_system("cartesian_2d")
+        # A 350 deg rotation is a 10 deg turn; magnitude must not report 1.94.
+        assert cs.transform_magnitude({"rotation_deg": 350.0}) == pytest.approx(
+            cs.transform_magnitude({"rotation_deg": -10.0})
+        )
+        assert cs.transform_magnitude({"rotation_deg": 350.0}) < 0.1

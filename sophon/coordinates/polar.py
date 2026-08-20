@@ -6,6 +6,7 @@ import numpy as np
 
 from sophon.coordinates.base import CoordinateSystem
 from sophon.coordinates.registry import register
+from sophon.transforms import wrap_angle_deg
 
 
 @register("polar")
@@ -124,7 +125,7 @@ class Polar(CoordinateSystem):
     def describe_transform(self, transform_params: dict[str, float]) -> str:
         parts = []
         rs = transform_params.get("radial_shift", 0.0)
-        rot = transform_params.get("angular_rotation_deg", 0.0)
+        rot = wrap_angle_deg(transform_params.get("angular_rotation_deg", 0.0))
         rsc = transform_params.get("radial_scale", 0.0)
         if abs(rs) > 1e-6:
             parts.append(f"radial shift {rs:.3f}")
@@ -136,7 +137,7 @@ class Polar(CoordinateSystem):
 
     def classify_direction(self, transform_params: dict[str, float]) -> str:
         rs = transform_params.get("radial_shift", 0.0)
-        rot = transform_params.get("angular_rotation_deg", 0.0)
+        rot = wrap_angle_deg(transform_params.get("angular_rotation_deg", 0.0))
         rsc = transform_params.get("radial_scale", 0.0)
 
         candidates: list[tuple[float, str]] = []
@@ -160,7 +161,7 @@ class Polar(CoordinateSystem):
 
     def transform_magnitude(self, transform_params: dict[str, float]) -> float:
         rs = transform_params.get("radial_shift", 0.0)
-        rot = transform_params.get("angular_rotation_deg", 0.0)
+        rot = wrap_angle_deg(transform_params.get("angular_rotation_deg", 0.0))
         rsc = transform_params.get("radial_scale", 0.0)
         return abs(rs) + abs(rot) / 180.0 + abs(rsc)
 

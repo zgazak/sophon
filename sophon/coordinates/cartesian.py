@@ -6,6 +6,7 @@ import numpy as np
 
 from sophon.coordinates.base import CoordinateSystem
 from sophon.coordinates.registry import register
+from sophon.transforms import wrap_angle_deg
 
 
 @register("cartesian_2d")
@@ -108,7 +109,7 @@ class Cartesian2D(CoordinateSystem):
         parts = []
         tx = transform_params.get("translation_x", 0.0)
         ty = transform_params.get("translation_y", 0.0)
-        rot = transform_params.get("rotation_deg", 0.0)
+        rot = wrap_angle_deg(transform_params.get("rotation_deg", 0.0))
         scale = transform_params.get("scale", 0.0)
         if abs(tx) > 1e-6 or abs(ty) > 1e-6:
             parts.append(f"translation ({tx:.3f}, {ty:.3f})")
@@ -121,7 +122,7 @@ class Cartesian2D(CoordinateSystem):
     def classify_direction(self, transform_params: dict[str, float]) -> str:
         tx = transform_params.get("translation_x", 0.0)
         ty = transform_params.get("translation_y", 0.0)
-        rot = transform_params.get("rotation_deg", 0.0)
+        rot = wrap_angle_deg(transform_params.get("rotation_deg", 0.0))
         scale = transform_params.get("scale", 0.0)
 
         # Pick the dominant transform component
@@ -154,7 +155,7 @@ class Cartesian2D(CoordinateSystem):
     def transform_magnitude(self, transform_params: dict[str, float]) -> float:
         tx = transform_params.get("translation_x", 0.0)
         ty = transform_params.get("translation_y", 0.0)
-        rot = transform_params.get("rotation_deg", 0.0)
+        rot = wrap_angle_deg(transform_params.get("rotation_deg", 0.0))
         scale = transform_params.get("scale", 0.0)
         return np.sqrt(tx**2 + ty**2) + abs(rot) / 180.0 + abs(scale)
 
