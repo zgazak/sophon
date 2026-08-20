@@ -41,6 +41,13 @@ _MIN_MISALIGNMENT: dict[str, float] = {
     "altitude_offset_deg": 8.0,
 }
 
+# A categorical sample whose every transform param is within this of zero has no
+# well-defined direction answer, so `_generate_one` rejects it. Signed stratum
+# sampling must therefore never draw inside this band: under `balance="exact"` a
+# rejected sample silently consumes its scheduled stratum and yields nothing,
+# which unbalances the very labels that mode exists to balance.
+_DEGENERATE_EPS = 1e-6
+
 
 def _signed_keys(transform_ranges: dict[str, list[float]], keys: list[str]):
     """(key, sign) strata for keys whose active range spans that sign."""
@@ -99,13 +106,27 @@ def _sample_signed_single_transform(
     key: str,
     sign: int,
 ) -> dict[str, float]:
-    """Sample one transform restricted to a sign stratum, zeroing all others."""
+    """Sample one transform restricted to a sign stratum, zeroing all others.
+
+    The bound nearest zero is held off by `_DEGENERATE_EPS` so the draw cannot
+    land in the degenerate band that `_generate_one` rejects. Excluded mass is
+    ~1e-6/range (0.0007% at [-0.15, 0.15]), and those samples are unanswerable
+    anyway; without the offset one draw in roughly 1e-6/range yields nothing and
+    silently costs `balance="exact"` one example from that stratum.
+    """
     lo, hi = transform_ranges[key]
     params = make_identity_transform(cs.supported_transforms)
     if sign > 0:
-        params[key] = float(rng.uniform(max(0.0, lo), hi))
+        low, high = max(_DEGENERATE_EPS, lo), hi
     else:
-        params[key] = float(rng.uniform(lo, min(0.0, hi)))
+        low, high = lo, min(-_DEGENERATE_EPS, hi)
+    if low > high:
+        # Range narrower than the degenerate band itself (pathological, and
+        # far below `_MIN_MISALIGNMENT`). Collapse to the bound furthest from
+        # zero rather than inverting, and still consume one draw so the seeded
+        # stream stays aligned.
+        low = high = hi if sign > 0 else lo
+    params[key] = float(rng.uniform(low, high))
     return params
 
 
@@ -437,7 +458,7 @@ class BenchmarkGenerator:
         # quantitative skip above; identity params here mean no mappable
         # transform had a nonzero range).
         if q_type == "categorical" and all(
-            abs(v) <= 1e-6 for v in transform_params.values()
+            abs(v) <= _DEGENERATE_EPS for v in transform_params.values()
         ):
             return None
 

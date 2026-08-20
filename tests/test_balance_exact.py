@@ -111,3 +111,87 @@ balance: exact
     assert sorted(per_cs["linear_1d"].values()) == [6, 6]
     assert per_cs["polar"]["clockwise"] == 2 and per_cs["polar"]["counterclockwise"] == 2
     assert per_cs["polar"]["inward"] == 4 and per_cs["polar"]["outward"] == 4
+
+
+SINGLE = """\
+name: balance_single
+description: "signed stratum degeneracy regression"
+coordinate_system: {coord}
+output_mode: text_description
+points:
+  num_points: [10, 15]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  {key}: {rng}
+questions:
+  - {{type: categorical, vocab_mode: restricted}}
+num_samples: {n}
+seed: 99
+balance: exact
+"""
+
+
+def test_signed_sampler_never_draws_the_degenerate_band():
+    """A signed draw must never land where `_generate_one` would reject it.
+
+    Under ``balance: exact`` such a draw consumes its scheduled stratum and
+    yields nothing, so the realized labels come out unbalanced — the one thing
+    the mode promises not to do.
+    """
+    import numpy as np
+
+    from sophon.coordinates import get_coordinate_system
+    from sophon.generator import _DEGENERATE_EPS, _sample_signed_single_transform
+
+    cs = get_coordinate_system("cartesian_2d")
+    rng = np.random.Generator(np.random.PCG64(0))
+    # A range tight around zero, so essentially every draw would otherwise fall
+    # in the degenerate band.
+    ranges = {"translation_x": [-2e-6, 2e-6]}
+    for sign in (+1, -1):
+        for _ in range(500):
+            v = _sample_signed_single_transform(rng, cs, ranges, "translation_x", sign)
+            got = v["translation_x"]
+            assert abs(got) >= _DEGENERATE_EPS, f"drew into the degenerate band: {got}"
+            assert got * sign > 0, f"sign {sign} stratum produced {got}"
+
+
+def test_signed_sampler_survives_range_narrower_than_the_band():
+    """Pathological sub-epsilon range must not invert the uniform() bounds."""
+    import numpy as np
+
+    from sophon.coordinates import get_coordinate_system
+    from sophon.generator import _sample_signed_single_transform
+
+    cs = get_coordinate_system("cartesian_2d")
+    rng = np.random.Generator(np.random.PCG64(0))
+    ranges = {"translation_x": [-1e-9, 1e-9]}
+    for sign in (+1, -1):
+        drawn = _sample_signed_single_transform(rng, cs, ranges, "translation_x", sign)
+        got = drawn["translation_x"]
+        assert -1e-9 <= got <= 1e-9, f"escaped the declared range: {got}"
+
+
+def test_large_single_transform_runs_stay_exactly_balanced():
+    """End-to-end invariant at the scale where the degeneracy bug surfaced.
+
+    Whether any particular (n, seed, num_points) actually draws into the
+    degenerate band depends on the exact RNG stream, so this is a smoke check
+    over a large run rather than a deterministic reproduction — the guard that
+    genuinely fails without the fix is
+    `test_signed_sampler_never_draws_the_degenerate_band` above.
+    """
+    cases = [
+        ("cartesian_2d", "translation_x", "[-0.15, 0.15]"),
+        ("cartesian_2d", "translation_y", "[-0.15, 0.15]"),
+        ("polar", "radial_scale", "[-0.3, 0.3]"),
+    ]
+    for coord, key, rng_ in cases:
+        spec = BenchmarkSpec(
+            **yaml.safe_load(SINGLE.format(coord=coord, key=key, rng=rng_, n=10400))
+        )
+        samples = [s for _img, s in BenchmarkGenerator(spec).generate()]
+        counts = collections.Counter(s.ground_truth for s in samples)
+        assert len(samples) == 10400, f"{key}: yielded {len(samples)} of 10400"
+        assert set(counts.values()) == {5200}, f"{key}: unbalanced {dict(counts)}"
