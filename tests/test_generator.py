@@ -131,3 +131,71 @@ seed: 42
             assert img.size[0] > img.size[1]
 
 
+
+
+class TestDegenerateSingleteonTransforms:
+    """Centroid-relative transforms are the identity at n=1.
+
+    Cartesian rotation and scale both operate about the centroid, so with a
+    single point nothing moves however large the parameter. Such a sample has
+    two identical point sets and a ground truth asserting a direction, so a
+    model that correctly says "these are the same" is scored wrong. The
+    generator must not emit them.
+    """
+
+    @staticmethod
+    def _spec(transform, n, qtype="categorical"):
+        import yaml
+
+        from sophon.schema import BenchmarkSpec
+
+        return BenchmarkSpec(**yaml.safe_load(f"""
+name: degen
+coordinate_system: cartesian_2d
+output_mode: text_description
+points:
+  num_points: [{n}, {n}]
+  distribution: uniform
+  margin: 0.1
+transforms:
+  {transform}
+questions:
+  - {{type: {qtype}, vocab_mode: restricted}}
+num_samples: 30
+seed: 3
+"""))
+
+    def test_cartesian_rotation_at_n1_yields_nothing(self):
+        from sophon.generator import BenchmarkGenerator
+
+        spec = self._spec("rotation_deg: [20, 45]", 1)
+        assert list(BenchmarkGenerator(spec).generate()) == []
+
+    def test_cartesian_scale_at_n1_yields_nothing(self):
+        from sophon.generator import BenchmarkGenerator
+
+        spec = self._spec("scale: [0.15, 0.3]", 1, qtype="quantitative")
+        assert list(BenchmarkGenerator(spec).generate()) == []
+
+    def test_cartesian_translation_at_n1_is_fine(self):
+        from sophon.generator import BenchmarkGenerator
+
+        spec = self._spec("translation_x: [0.1, 0.15]", 1)
+        assert len(list(BenchmarkGenerator(spec).generate())) > 0
+
+    def test_cartesian_rotation_at_n2_is_fine(self):
+        from sophon.generator import BenchmarkGenerator
+
+        spec = self._spec("rotation_deg: [20, 45]", 2)
+        assert len(list(BenchmarkGenerator(spec).generate())) > 0
+
+    def test_polar_transforms_unaffected_at_n1(self):
+        import numpy as np
+
+        from sophon.coordinates import get_coordinate_system
+
+        cs = get_coordinate_system("polar")
+        pts = np.array([[0.6, 1.0]])
+        for params in ({"radial_scale": 0.3}, {"angular_rotation_deg": 35.0},
+                       {"radial_shift": 0.2}):
+            assert not np.allclose(cs.apply_transform(pts, params), pts)

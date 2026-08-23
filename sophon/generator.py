@@ -464,6 +464,27 @@ class BenchmarkGenerator:
 
         transformed = cs.apply_transform(ref_points, transform_params)
 
+        # A centroid-relative transform is the IDENTITY when there is only one
+        # point: cartesian rotation and cartesian scale both work about the
+        # centroid, and with n=1 the centroid IS the point, so nothing moves.
+        # The guard above cannot catch this because the PARAMETER is large
+        # (35 deg, say) while only the EFFECT is null.
+        #
+        # Emitting such a sample produces a stimulus whose two point sets are
+        # byte-identical while the ground truth asserts a direction. Models
+        # answer "these are the same, no movement needed" -- which is correct --
+        # and get scored wrong. Audited in the text-only n-sweep: 50/50 of the
+        # categorical rotation n=1 cells were identity, giving an accuracy of
+        # exactly 0.00 that was previously filed as an unresolved oddity.
+        #
+        # Polar transforms are origin-relative and so are unaffected at any n.
+        # rtol=0 on purpose: np.allclose defaults to rtol=1e-5, which at
+        # coordinates near 0.5 gives a tolerance of ~6e-6 and would reject
+        # genuine-but-tiny transforms rather than only exact identities. This
+        # test is for "nothing moved at all", not "barely moved".
+        if np.allclose(transformed, ref_points, rtol=0.0, atol=_DEGENERATE_EPS):
+            return None
+
         # Render image if needed
         want_image = spec.output_mode in ("image", "both")
         want_text = spec.output_mode in ("text_description", "both")
