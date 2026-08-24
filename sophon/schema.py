@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 VALID_COORDINATE_SYSTEMS = ["linear_1d", "cartesian_2d", "polar", "all"]
 
@@ -35,6 +35,22 @@ class PointsConfig(BaseModel):
     num_points: tuple[int, int]  # [min, max] uniform random int
     distribution: Literal["uniform", "clustered", "grid"] = "uniform"
     margin: float = 0.1
+    # Anisotropy: height/width of the region points are drawn from. 1.0 (the
+    # default) is the original isotropic behaviour and is applied as a no-op, so
+    # every pre-existing spec generates byte-identical stimuli. Values != 1.0
+    # squeeze the cloud toward the region centre along one screen axis, which
+    # makes the axis-aligned bounding box a controllable variable -- the knob
+    # that separates "screen-locked 4-fold cue" from "bounding-box extent".
+    # Only cartesian_2d has a meaningful screen-aligned aspect; polar native
+    # coordinates are (r, theta) and linear_1d has one axis, so both reject it.
+    aspect_ratio: float = 1.0
+
+    @field_validator("aspect_ratio")
+    @classmethod
+    def _positive_aspect(cls, v: float) -> float:
+        if not (v > 0.0):
+            raise ValueError(f"aspect_ratio must be > 0, got {v}")
+        return v
 
 
 class QuestionConfig(BaseModel):

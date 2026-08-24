@@ -56,6 +56,19 @@ class Cartesian2D(CoordinateSystem):
         else:
             raise ValueError(f"Unknown distribution: {distribution!r}")
 
+    supports_anisotropy = True
+
+    def _apply_aspect(self, points: np.ndarray, aspect_ratio: float) -> np.ndarray:
+        # Compress the longer axis' counterpart rather than expanding anything,
+        # so points drawn inside [margin, 1-margin] stay inside it.
+        sx = min(1.0, 1.0 / aspect_ratio)
+        sy = min(1.0, aspect_ratio)
+        centre = 0.5
+        pts = points.copy()
+        pts[:, 0] = centre + (pts[:, 0] - centre) * sx
+        pts[:, 1] = centre + (pts[:, 1] - centre) * sy
+        return pts
+
     def apply_transform(self, points: np.ndarray, transform_params: dict[str, float]) -> np.ndarray:
         pts = points.copy()
         centroid = pts.mean(axis=0)

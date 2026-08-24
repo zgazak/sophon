@@ -406,7 +406,10 @@ class BenchmarkGenerator:
         n_points = int(rng.integers(n_lo, n_hi + 1))
 
         # 3. Generate reference points
-        ref_points = cs.generate_points(n_points, rng, spec.points.distribution, spec.points.margin)
+        ref_points = cs.generate_points_shaped(
+            n_points, rng, spec.points.distribution, spec.points.margin,
+            spec.points.aspect_ratio,
+        )
 
         if q_type == "comparative":
             return self._gen_comparative(
