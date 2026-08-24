@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Iterator
 
 import numpy as np
@@ -283,6 +284,12 @@ def _filter_transforms_for_cs(
     return {k: v for k, v in all_transforms.items() if k in cs.supported_transforms}
 
 
+
+def _stable_seed(key: str) -> int:
+    """Process-independent replacement for `hash(key) & 0x7FFFFFFF`."""
+    return int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:4], "big") & 0x7FFFFFFF
+
+
 class BenchmarkGenerator:
     """Generate (image, sample) pairs from a benchmark spec.
 
@@ -514,8 +521,11 @@ class BenchmarkGenerator:
         elif q_type == "categorical":
             vocab_mode = question_config.vocab_mode
             vocab_order = question_config.vocab_order
-            # Deterministic per-sample seed for vocab ordering
-            order_seed = hash(str(sample_id)) & 0x7FFFFFFF
+            # Deterministic per-sample seed for vocab ordering.
+            # Must NOT use builtin hash(): it is salted per process by
+            # PYTHONHASHSEED, so the presented option order silently differed
+            # between runs and no dataset could be regenerated identically.
+            order_seed = _stable_seed(str(sample_id))
             q_text, answer, valid_dirs = generate_categorical_question(
                 cs, transform_params, vocab_mode=vocab_mode,
                 vocab_order=vocab_order, order_seed=order_seed,
