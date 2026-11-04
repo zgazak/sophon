@@ -1,6 +1,6 @@
 [project]
 name = "sophon-bench"
-version = "0.3.1"
+version = "0.3.2"
 description = "Generative benchmark for probing spatial reasoning in VLMs across coordinate geometries"
 readme = "README.md"
 license = "MIT"
