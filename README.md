@@ -4,7 +4,7 @@ A procedurally-generated benchmark for diagnosing spatial reasoning failure mode
 
 Sophon ships **no images** — it ships a generator. A YAML spec plus an integer seed deterministically produces `(image, question, ground_truth)` triples, so every experiment is reproducible from a one-line config. The benchmark strips everything except spatial structure: no objects, no scenes, no textures, no language cues. What's left is a clean readout on whether a VLM can recover a geometric transformation from its rendered projection.
 
-![Sample stimuli across coordinate systems and question types](docs/img/examples_compact.png)
+![Sample stimuli across coordinate systems and question types](https://raw.githubusercontent.com/zgazak/sophon/main/docs/img/examples_compact.png)
 
 > *Sample Sophon stimuli, one per (coordinate-system, question-type) cell. Left: 1D-linear / categorical. Center: 2D Cartesian / binary. Right: 2D polar / quantitative. Each panel shows its coordinate system and ground-truth transform parameter.*
 
@@ -45,7 +45,7 @@ for img, sample in BenchmarkGenerator(spec).generate(seed=42):
 - **Comparative** — *"Which image (A or B) shows better alignment?"* — pairwise side-by-side.
 - **Quantitative** — *"Approximately how many degrees was the rotation?"* — magnitude estimation.
 
-![Categorical samples across coordinate systems](docs/img/examples_categorical.png)
+![Categorical samples across coordinate systems](https://raw.githubusercontent.com/zgazak/sophon/main/docs/img/examples_categorical.png)
 
 ### Specs
 
