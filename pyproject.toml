@@ -1,6 +1,6 @@
 [project]
 name = "sophon-bench"
-version = "0.3.0"
+version = "0.3.1"
 description = "Generative benchmark for probing spatial reasoning in VLMs across coordinate geometries"
 readme = "README.md"
 license = "MIT"
@@ -52,17 +52,10 @@ sophon = "sophon.cli:cli"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build]
-exclude = [
-    "preview/",
-    ".claude/",
-    ".ruff_cache/",
-    ".pytest_cache/",
-    "uv.lock",
-    "tests/",
-    "scripts/",
-    "litreview.*",
-]
+# Allowlists, not exclude lists: repo tooling (CLAUDE.md, .github/, docs/,
+# Makefile, ...) can never leak into a release. pyproject.toml is always added.
+[tool.hatch.build.targets.sdist]
+only-include = ["sophon", "README.md", "LICENSE"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["sophon"]
