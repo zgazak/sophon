@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: uv sync --locked --extra dev
+      - name: Ruff (errors and unused code)
+        # Narrow rule set, same as the release gate. The full `make lint`
+        # config still reports pre-existing E501 findings.
+        run: uv run ruff check sophon --select E9,F63,F7,F82,F401,F541,F811
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --locked --extra dev
+      - name: Run tests
+        run: uv run pytest -v
+
+  build:
+    # Packaging check: catches a broken build or bad metadata on a PR rather
+    # than mid-release, when the GitHub Release is already public.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Build distributions
+        run: uv build
+      - name: Check distribution metadata
+        run: uvx twine check dist/*
+      - name: Smoke-test the installed wheel
+        # Only a non-editable install catches files (e.g. sophon/specs/*.yaml)
+        # missing from the wheel. Run from /tmp so the checkout's sophon/
+        # cannot shadow the installed package.
+        run: |
+          uv venv /tmp/wheel-check
+          uv pip install --python /tmp/wheel-check/bin/python dist/*.whl
+          cd /tmp
+          /tmp/wheel-check/bin/python -c "
+          from importlib.metadata import version
+          import sophon
+          assert sophon.__version__ == version('sophon-bench'), sophon.__version__
+          print('sophon', sophon.__version__)
+          "
+          /tmp/wheel-check/bin/sophon --version
+          /tmp/wheel-check/bin/sophon preview --spec cartesian_rotation --num-samples 2 --output-dir /tmp/preview
+          test -n "$(ls /tmp/preview)"
