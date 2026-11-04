@@ -71,9 +71,12 @@ Categorical questions default to a **restricted** vocabulary — only the two di
 If you use Sophon in published work, please cite:
 
 ```bibtex
-@article{sophon2026,
-  title  = {{Sophon}: A Procedural Diagnostic for Spatial Reasoning in Vision-Language Models},
-  year   = {2026}
+@inproceedings{gazak2026sophon,
+  title     = {{Sophon}: A Procedural Diagnostic for Spatial Reasoning in Vision-Language Models},
+  author    = {Gazak, J. Zachary and Swindle, Ryan and Fletcher, Justin},
+  booktitle = {The Fortieth Annual Conference on Neural Information Processing Systems},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=OL7Mvsjyzg}
 }
 ```
 
