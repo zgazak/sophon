@@ -1,0 +1,267 @@
+{
+  "@context": {
+    "@language": "en",
+    "@vocab": "https://schema.org/",
+    "citeAs": "cr:citeAs",
+    "column": "cr:column",
+    "conformsTo": "dct:conformsTo",
+    "cr": "http://mlcommons.org/croissant/",
+    "rai": "http://mlcommons.org/croissant/RAI/",
+    "data": {
+      "@id": "cr:data",
+      "@type": "@json"
+    },
+    "dataType": {
+      "@id": "cr:dataType",
+      "@type": "@vocab"
+    },
+    "dct": "http://purl.org/dc/terms/",
+    "equivalentProperty": "cr:equivalentProperty",
+    "samplingRate": "cr:samplingRate",
+    "examples": {
+      "@id": "cr:examples",
+      "@type": "@json"
+    },
+    "extract": "cr:extract",
+    "field": "cr:field",
+    "fileProperty": "cr:fileProperty",
+    "fileObject": "cr:fileObject",
+    "fileSet": "cr:fileSet",
+    "format": "cr:format",
+    "includes": "cr:includes",
+    "isLiveDataset": "cr:isLiveDataset",
+    "jsonPath": "cr:jsonPath",
+    "key": "cr:key",
+    "md5": "cr:md5",
+    "parentField": "cr:parentField",
+    "path": "cr:path",
+    "recordSet": "cr:recordSet",
+    "references": "cr:references",
+    "regex": "cr:regex",
+    "repeated": "cr:repeated",
+    "replace": "cr:replace",
+    "sc": "https://schema.org/",
+    "separator": "cr:separator",
+    "source": "cr:source",
+    "subField": "cr:subField",
+    "transform": "cr:transform"
+  },
+  "@type": "sc:Dataset",
+  "name": "Sophon",
+  "conformsTo": "http://mlcommons.org/croissant/1.0",
+  "description": "Sophon is a procedurally generated diagnostic benchmark for spatial reasoning in vision-language models (VLMs). Each stimulus is a 512x512 PNG showing two overlaid point clouds, blue and red, that share an underlying point pattern and differ by one geometric transformation (translation, rotation, scale, or a compound) in one of three coordinate systems (1D linear, 2D Cartesian, 2D polar). Each stimulus is paired with a question in one of four formats (binary, categorical, comparative, quantitative) and an exact ground-truth answer derived from the generator's transform parameters. The dataset ships as a generator rather than as images: a YAML spec file plus an integer seed deterministically produces the (image, question, ground_truth) triples, so the full evaluation suite (22 cells x 200 samples x 3 evaluation seeds = 13,200 instances) and the training packages (seed 100, sizes 500 to 10,000) are reproduced exactly by the packaged generator. Stimuli contain no objects, scenes, textures, text, or people.",
+  "citeAs": "@inproceedings{gazak2026sophon, title={{Sophon}: A Procedural Diagnostic for Spatial Reasoning in Vision-Language Models}, author={Gazak, J. Zachary and Swindle, Ryan and Fletcher, Justin}, booktitle={Advances in Neural Information Processing Systems 39 (NeurIPS 2026), Evaluations and Datasets Track}, year={2026}, url={https://openreview.net/forum?id=OL7Mvsjyzg}}",
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://github.com/zgazak/sophon",
+  "version": "0.3.3",
+  "datePublished": "2026-11-06",
+  "creator": [
+    {
+      "@type": "sc:Person",
+      "name": "J. Zachary Gazak",
+      "email": "jzg@alum.mit.edu",
+      "affiliation": "Exoptica"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Ryan Swindle",
+      "affiliation": "Exoptica"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Justin Fletcher",
+      "affiliation": "Exoptica"
+    }
+  ],
+  "publisher": {
+    "@type": "sc:Organization",
+    "name": "Exoptica",
+    "url": "https://github.com/zgazak/sophon"
+  },
+  "keywords": [
+    "vision-language models",
+    "spatial reasoning",
+    "procedural benchmark",
+    "synthetic stimuli",
+    "point clouds",
+    "diagnostic evaluation",
+    "coordinate systems"
+  ],
+  "isLiveDataset": false,
+  "distribution": [
+    {
+      "@type": "cr:FileObject",
+      "@id": "github-repository",
+      "name": "github-repository",
+      "description": "The Sophon generator, evaluation harness, and spec files. Installable from PyPI as sophon-bench; the results in the paper were produced with version 0.3.3 (git tag v0.3.3).",
+      "contentUrl": "https://github.com/zgazak/sophon",
+      "encodingFormat": "git+https",
+      "sha256": "main"
+    },
+    {
+      "@type": "cr:FileSet",
+      "@id": "spec-files",
+      "name": "spec-files",
+      "description": "YAML spec files defining the diagnostic suite. Each spec fixes a coordinate system, point-count range, transform ranges, question types, sample count, and seed. Together with the generator these are the dataset: the rendered PNGs and question/answer records are a deterministic function of (spec, seed).",
+      "containedIn": {
+        "@id": "github-repository"
+      },
+      "encodingFormat": "application/x-yaml",
+      "includes": "sophon/specs/*.yaml"
+    }
+  ],
+  "recordSet": [
+    {
+      "@type": "cr:RecordSet",
+      "@id": "specs",
+      "name": "specs",
+      "description": "One record per spec file in the diagnostic suite.",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "specs/filename",
+          "name": "filename",
+          "description": "Spec file name, e.g. cartesian_translation_x.yaml.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileSet": {
+              "@id": "spec-files"
+            },
+            "extract": {
+              "fileProperty": "filename"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "specs/content",
+          "name": "content",
+          "description": "Full YAML text of the spec.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileSet": {
+              "@id": "spec-files"
+            },
+            "extract": {
+              "fileProperty": "content"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "samples",
+      "name": "samples",
+      "description": "Schema of one generated sample, as produced by sophon.generator.BenchmarkGenerator(spec).generate(seed). Each sample pairs a rendered PNG with a question and an exact ground-truth answer. The records below are illustrative examples; the full suite is regenerated by the generator.",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "samples/sample_id",
+          "name": "sample_id",
+          "description": "Deterministic sample identifier within a (spec, seed) stream.",
+          "dataType": "sc:Text"
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "samples/spec_name",
+          "name": "spec_name",
+          "description": "Name of the spec that produced the sample.",
+          "dataType": "sc:Text"
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "samples/coordinate_system",
+          "name": "coordinate_system",
+          "description": "One of linear_1d, cartesian_2d, polar_2d.",
+          "dataType": "sc:Text"
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "samples/question_type",
+          "name": "question_type",
+          "description": "One of binary, categorical, comparative, quantitative.",
+          "dataType": "sc:Text"
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "samples/question_text",
+          "name": "question_text",
+          "description": "The question shown to the model, verbatim from the template for the question type.",
+          "dataType": "sc:Text"
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "samples/ground_truth",
+          "name": "ground_truth",
+          "description": "Exact answer derived from the generator's transform parameters: a string for binary, categorical, and comparative cells; a number for quantitative cells.",
+          "dataType": "sc:Text"
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "samples/transform_magnitude",
+          "name": "transform_magnitude",
+          "description": "Magnitude of the applied transform in the spec's units (fraction of the unit square for translation, degrees for rotation, scale factor deviation for scale).",
+          "dataType": "sc:Float"
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "samples/transform_direction",
+          "name": "transform_direction",
+          "description": "Direction word for categorical cells (e.g. left, right, up, down, clockwise, counterclockwise, inward, outward); empty otherwise.",
+          "dataType": "sc:Text"
+        }
+      ],
+      "data": [
+        {
+          "samples/sample_id": "cartesian_translation_x_42_0",
+          "samples/spec_name": "cartesian_translation_x",
+          "samples/coordinate_system": "cartesian_2d",
+          "samples/question_type": "categorical",
+          "samples/question_text": "Which direction should the red points move to align with the blue points? Answer with one of: left, right.",
+          "samples/ground_truth": "left",
+          "samples/transform_magnitude": 0.11,
+          "samples/transform_direction": "left"
+        },
+        {
+          "samples/sample_id": "cartesian_rotation_42_0",
+          "samples/spec_name": "cartesian_rotation",
+          "samples/coordinate_system": "cartesian_2d",
+          "samples/question_type": "quantitative",
+          "samples/question_text": "Estimate the rotation angle in degrees between the blue and red point sets. State your estimate in degrees as a number.",
+          "samples/ground_truth": "27.4",
+          "samples/transform_magnitude": 27.4,
+          "samples/transform_direction": ""
+        },
+        {
+          "samples/sample_id": "linear_translation_42_0",
+          "samples/spec_name": "linear_translation",
+          "samples/coordinate_system": "linear_1d",
+          "samples/question_type": "binary",
+          "samples/question_text": "Are the blue and red point sets aligned to within approximately one dot width? Answer yes or no.",
+          "samples/ground_truth": "no",
+          "samples/transform_magnitude": 0.08,
+          "samples/transform_direction": ""
+        }
+      ]
+    }
+  ],
+  "rai:dataCollection": "All data are procedurally generated by the Sophon generator (sophon-bench, MIT license). No images, text, or annotations are scraped, licensed, or collected from any external source or from people. A spec file (coordinate system, point-count range, transform ranges, question types, sample count) and an integer seed deterministically produce each (image, question, ground_truth) triple; the rendered PNGs and records are reproducible byte for byte from the released generator.",
+  "rai:dataCollectionType": "Synthetic / procedurally generated",
+  "rai:dataCollectionTimeframe": "Generated during paper development, March to April 2026; regenerable at any time from the released generator.",
+  "rai:dataCollectionRawData": "The canonical raw representation is the spec file plus seed. Rendered PNGs and question/answer records are derived artifacts.",
+  "rai:dataCollectionMissingData": "None. Every instance has an image, a question, a ground-truth answer, and a metadata record with the generating transform parameters.",
+  "rai:dataPreprocessingProtocol": "The generator applies rendering guards at generation time: a margin from the axis boundary, a bounded point count per cloud, and transform-magnitude bounds per cell. No post-hoc filtering, cleaning, or deduplication is applied.",
+  "rai:dataAnnotationProtocol": "No human annotation. Ground-truth answers are computed from the transform parameters that generated each stimulus, so label noise is zero by construction.",
+  "rai:dataAnnotationPlatform": "Not applicable; labels are generated, not annotated.",
+  "rai:dataAnnotationAnalysis": "Not applicable. Labels are exact by construction.",
+  "rai:annotationsPerItem": "One generated ground-truth answer per item; no human annotations.",
+  "rai:annotatorDemographics": "Not applicable; no human annotators.",
+  "rai:machineAnnotationTools": "The Sophon generator (sophon-bench 0.3.3) computes ground truth from the sampled transform parameters.",
+  "rai:personalSensitiveInformation": "None. Stimuli are abstract colored point clouds on a neutral background with axis gridlines; they contain no people, faces, identifiable objects, places, text, or any personal or sensitive content. The human-baseline study reported in the paper collected only anonymous task responses and is released with rater IDs replaced by opaque per-session hashes.",
+  "rai:dataUseCases": "Intended uses: diagnosing geometric spatial perception in vision-language models with object, scene, texture, and language priors removed; fine-tuning ablations and mechanism studies (which components of a VLM carry a spatial-reasoning gain); cross-coordinate-system transfer studies; rendering-invariance controls; and as a unit-test suite for new VLM architectures. The generator allows fresh seeds for uncontaminated evaluation snapshots.",
+  "rai:dataLimitations": "Sophon stimuli are deliberately abstract 2D point clouds, so results do not by themselves establish naturalistic spatial competence, 3D or depth reasoning, occlusion, viewpoint, compositional spatial language, or multi-step relational reasoning. Sophon should not be used as a standalone proxy for general spatial reasoning ability; it is intended to complement naturalistic spatial benchmarks. Training on the held-out evaluation seeds (42, 43, 44) defeats the benchmark's purpose; training data should use other seeds (the paper uses seed 100).",
+  "rai:dataBiases": "The data are synthetic and contain no demographic, cultural, or geographic content, so social biases in the usual sense are absent by construction. Design biases that affect measured performance: the default stimulus uses red and blue point sets and a fixed rendering style, and models fine-tuned on Sophon bind partly to this appearance (novel color palettes and role reversal reduce accuracy; see the appearance battery in the paper). Transform magnitudes are sampled uniformly within per-cell ranges, so difficulty distributions are fixed by the spec rather than by any natural distribution. Rotation remains near chance for all tested models and is harder than translation or scale.",
+  "rai:dataSocialImpact": "Sophon is a diagnostic tool. Its positive impact is identifying spatial-reasoning failure modes in deployed VLMs before they are used in settings such as medical imaging, scientific instrumentation, or autonomous systems where spatial reasoning matters. The dataset poses no direct risk of misuse: it contains no personal content and is not usable to train generative models of people, places, or text. A documented failure mode of use is teaching the test: task-specific fine-tuning on Sophon installs an answer routing that improves Sophon scores without improving the underlying perception, which external benchmarks cannot detect.",
+  "rai:dataReleaseMaintenancePlan": "Released under MIT (generator and harness) and CC-BY 4.0 (pre-rendered data) at https://github.com/zgazak/sophon and on PyPI as sophon-bench. The authors commit to a two-year maintenance window from publication: quarterly re-evaluation of leading public frontier models on the held-out seeds with results posted to a public leaderboard; triage of generator bugs and parser pathologies through GitHub issues; and tagged generator versions so that any cited result remains exactly reproducible. Prior versions remain installable. Contact: GitHub issues on the repository or jzg@alum.mit.edu."
+}
