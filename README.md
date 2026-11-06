@@ -66,17 +66,15 @@ Every spec is deterministic given a seed: same seed in, same `(image, question, 
 
 Categorical questions default to a **restricted** vocabulary — only the two direction words relevant to the active transform (e.g. `left, right` for x-translation). VLMs preferentially select rotation tokens (`clockwise`, `counterclockwise`) when they're available even on translation tasks; restricted vocabulary isolates spatial reasoning from answer-set confusion. The full six-way vocabulary remains available via `vocab_mode: full` in the spec for ablations.
 
-## Dataset metadata and pre-rendered evaluation suite
+## Pre-rendered evaluation suite
 
-- **Croissant metadata.** [`croissant.json`](croissant.json) describes the dataset in the [MLCommons Croissant](https://github.com/mlcommons/croissant) format, including the Responsible AI (RAI) block required by the NeurIPS Evaluations & Datasets track. It validates with `mlcroissant`.
-- **Pre-rendered evaluation suite.** The held-out evaluation seeds used in the paper (42, 43, 44) are attached to the [v0.3.3 release](https://github.com/zgazak/sophon/releases/tag/v0.3.3) as `sophon-eval-seed42.zip`, `sophon-eval-seed43.zip`, and `sophon-eval-seed44.zip` (CC-BY 4.0). Each archive holds `images/*.png`, `metadata.jsonl` (one record per sample: question text, ground truth, transform parameters), and `ground_truth.json`.
-- **Regenerating it.** The archives are a convenience. The generator reproduces the same files exactly:
+The paper's evaluation seeds (42, 43, 44) are attached to the [v0.3.3 release](https://github.com/zgazak/sophon/releases/tag/v0.3.3) as `sophon-eval-seed{42,43,44}.zip` (CC-BY 4.0). Each archive holds `images/*.png`, `metadata.jsonl`, and `ground_truth.json`. The generator reproduces them exactly:
 
-  ```bash
-  uv run sophon generate --spec sophon/specs/full_suite.yaml --seed 42 --output-dir sophon-eval-seed42
-  ```
+```bash
+uv run sophon generate --spec sophon/specs/full_suite.yaml --seed 42 --output-dir sophon-eval-seed42
+```
 
-  The results in the paper were produced with `sophon-bench` 0.3.3. Training data for the paper's fine-tuning experiments used seed 100; keep the evaluation seeds out of any training set.
+Dataset metadata is in [`croissant.json`](croissant.json).
 
 ## Citing
 
